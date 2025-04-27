@@ -1,7 +1,8 @@
-import { Firmware, FirmwareDto } from "../model/types";
+import { Firmware, FirmwareDto, PaginatedFirmware } from "../model/types";
 import { mapFirmwareDto } from "../model/mappers";
 import { apiClient } from "../../../shared/api/client";
-import { ApiResponse } from "../../../shared/api/types";
+import { ApiResponse, PaginatedApiResponse } from "../../../shared/api/types";
+import { mapPaginationMeta } from "../../../shared/api/mappers";
 
 /**
  * Service responsible for handling firmware-related API requests
@@ -13,7 +14,7 @@ export const firmwareApiService = {
    * @async
    * @param {number} [page=1] - The page number to retrieve
    * @param {number} [limit=10] - The number of items per page
-   * @returns {Promise<Firmware[]>} - A promise that resolves to an array of Firmware objects
+   * @returns {Promise<PaginatedFirmware>} - A promise that resolves to an array of Firmware objects
    * @throws Will log error and return empty array if API call fails
    * @example
    * // Get first page with default limit
@@ -22,17 +23,31 @@ export const firmwareApiService = {
    * // Get third page with 20 items per page
    * const firmwaresPage3 = await firmwareApiService.getAll(3, 20);
    */
-  getAll: async (page: number = 1, limit: number = 10): Promise<Firmware[]> => {
+  getAll: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedFirmware> => {
     try {
-      const { data } = await apiClient.get<ApiResponse<FirmwareDto[]>>(
+      const { data } = await apiClient.get<PaginatedApiResponse<FirmwareDto>>(
         `/api/firmware`,
         { params: { page: page, limit: limit } }
       );
 
-      return data.data.map(mapFirmwareDto);
+      return {
+        items: data.data.map(mapFirmwareDto),
+        paginationMeta: mapPaginationMeta(data.pagination),
+      };
     } catch (error) {
       console.error("Failed to fetch firmware list:", error);
-      return [];
+      return {
+        items: [],
+        paginationMeta: {
+          page: page,
+          totalCount: 0,
+          limit: limit,
+          totalPage: 1,
+        },
+      };
     }
   },
 
@@ -70,23 +85,40 @@ export const firmwareApiService = {
    * Searches for firmware based on a query string
    * @async
    * @param {string} query - The search query to filter firmware
-   * @returns {Promise<Firmware[]>} - A promise that resolves to an array of Firmware objects matching the query
+   * @param {number} [page=1] - The page number to retrieve
+   * @param {number} [limit=10] - The number of items per page
+   * @returns {Promise<PaginatedFirmware>} - A promise that resolves to an array of Firmware objects matching the query
    * @throws Will log error and return empty array if API call fails
    * @example
    * // Search for firmware with version "1.0"
    * const searchResults = await firmwareApiService.search("1.0");
    */
-  search: async (query: string): Promise<Firmware[]> => {
+  search: async (
+    query: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedFirmware> => {
     try {
-      const { data } = await apiClient.get<ApiResponse<FirmwareDto[]>>(
+      const { data } = await apiClient.get<PaginatedApiResponse<FirmwareDto>>(
         `/api/firmware/search`,
-        { params: { query: query } }
+        { params: { query: query, page: page, limit: limit } }
       );
 
-      return data.data.map(mapFirmwareDto);
+      return {
+        items: data.data.map(mapFirmwareDto),
+        paginationMeta: mapPaginationMeta(data.pagination),
+      };
     } catch (error) {
       console.error("Failed to search firmware:", error);
-      return [];
+      return {
+        items: [],
+        paginationMeta: {
+          page: page,
+          totalCount: 0,
+          limit: limit,
+          totalPage: 1,
+        },
+      };
     }
   },
 };
