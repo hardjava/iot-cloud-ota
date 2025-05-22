@@ -40,7 +40,10 @@ export const GroupTable = ({
                 <input
                   type="checkbox"
                   className="px-4 py-2"
-                  checked={selectedGroups.length === groups.length}
+                  aria-label="Select all groups"
+                  checked={
+                    groups.length > 0 && selectedGroups.length === groups.length
+                  }
                   onChange={(e) => onSelectAll(e.target.checked)}
                 />
               </th>
