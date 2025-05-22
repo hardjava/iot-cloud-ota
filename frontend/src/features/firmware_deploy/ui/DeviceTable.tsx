@@ -7,7 +7,7 @@ import { Device } from "../../../entities/device/model/types";
  * @property {Device[]} devices - List of devices to display
  * @property {Device[]} selectedDevices - List of selected devices
  * @property {(device: Device) => void} onSelectDevice - Callback function to handle device selection
- * @property {() => void} onSelectAll - Callback function to handle select all action
+ * @property {(checked:boolean) => void} onSelectAll - Callback function to handle select all action
  */
 export interface DeviceTableProps {
   devices: Device[];
