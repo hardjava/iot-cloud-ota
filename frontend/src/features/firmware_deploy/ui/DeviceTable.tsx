@@ -7,7 +7,7 @@ import { Device } from "../../../entities/device/model/types";
  * @property {Device[]} devices - List of devices to display
  * @property {Device[]} selectedDevices - List of selected devices
  * @property {(device: Device) => void} onSelectDevice - Callback function to handle device selection
- * @property {() => void} onSelectAll - Callback function to handle select all action
+ * @property {(checked: boolean) => void} onSelectAll - Callback function to handle select all action
  */
 export interface DeviceTableProps {
   devices: Device[];
@@ -40,7 +40,11 @@ export const DeviceTable = ({
                 <input
                   type="checkbox"
                   className="px-4 py-2"
-                  checked={selectedDevices.length === devices.length}
+                  aria-label="Select all devices"
+                  checked={
+                    devices.length > 0 &&
+                    selectedDevices.length === devices.length
+                  }
                   onChange={(e) => onSelectAll(e.target.checked)}
                 />
               </th>
