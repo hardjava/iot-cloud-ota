@@ -77,3 +77,37 @@ resource "aws_security_group" "bastion_sg" {
     Description = "Security group for Bastion host in iot-cloud-ota"
   }
 }
+
+resource "aws_security_group" "emqx_sg" {
+  name        = "iot-cloud-ota-emqx-sg"
+  description = "Security group for EMQX broker"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 1883 # MQTT without TLS
+    to_port     = 1883
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8883 # MQTT with TLS
+    to_port     = 8883
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 18083 # EMQX Dashboard
+    to_port     = 18083
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
