@@ -9,9 +9,13 @@ import com.coffee_is_essential.iot_cloud_ota.entity.FirmwareMetadata;
 import com.coffee_is_essential.iot_cloud_ota.repository.FirmwareMetadataJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -34,6 +38,7 @@ public class S3Service {
      * @param fileName 저장할 파일 이름 (예: "firmware.zip")
      * @return 업로드용 Presigned URL 및 S3 저장 경로가 포함된 DTO
      */
+    @Transactional
     public UploadPresignedUrlResponseDto getPresignedUploadUrl(String version, String fileName) {
         String path = createPath(version, fileName);
         GeneratePresignedUrlRequest generatedPresignedUrlRequest = generatePresignedUploadUrl(bucketName, path);
@@ -59,14 +64,21 @@ public class S3Service {
     }
 
     /**
-     * 지정된 펌웨어 ID에 해당하는 S3 객체에 대한 Presigned 다운로드 URL을 생성합니다.
+     * 지정된 버전과 파일 이름을 가진 펌웨어의 Presigned 다운로드 URL을 생성하여 반환합니다.
      *
-     * @param id 펌웨어 메터데이터의 고유 ID
-     * @return 다운로드용 Presigned URL을 포함한 DTO
+     * @param version  다운로드할 펌웨어의 버전 (예: "v1.0.0")
+     * @param fileName 다운로드할 펌웨어의 파일 이름 (예: "firmware.bin")
+     * @return S3 Presigned 다운로드 URL을 담은 {@link DownloadPresignedUrlResponseDto}
      */
-    public DownloadPresignedUrlResponseDto getPresignedDownloadUrl(Long id) {
-        FirmwareMetadata metadata = firmwareMetadataJpaRepository.findByIdOrElseThrow(id);
-        GeneratePresignedUrlRequest generatedPresignedUrlRequest = generatePresignedDownloadUrl(bucketName, metadata.getS3Path());
+    @Transactional
+    public DownloadPresignedUrlResponseDto getPresignedDownloadUrl(String version, String fileName) {
+        Optional<FirmwareMetadata> findMetadata = firmwareMetadataJpaRepository.findByVersionAndFileName(version, fileName);
+
+        if (findMetadata.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 펌웨어 정보를 찾을 수 없습니다.");
+        }
+
+        GeneratePresignedUrlRequest generatedPresignedUrlRequest = generatePresignedDownloadUrl(bucketName, findMetadata.get().getS3Path());
         String url = amazonS3.generatePresignedUrl(generatedPresignedUrlRequest).toString();
 
         return new DownloadPresignedUrlResponseDto(url);
