@@ -14,8 +14,9 @@ resource "aws_lb_target_group" "grafana_tg" {
   target_type = "ip"
 
   health_check {
-    protocol = "TCP"
+    protocol = "HTTP"
     port     = "3000"
+    path     = "/api/health"
   }
 }
 
@@ -57,6 +58,12 @@ resource "aws_ecs_task_definition" "grafana" {
 
       portMappings = [
         { containerPort = 3000, protocol = "tcp" }
+      ]
+
+      environment = [
+        { name = "GF_SECURITY_ALLOW_EMBEDDING", value = "true" },
+        { name = "GF_AUTH_ANONYMOUS_ENABLED", value = "true" },
+        { name = "GF_AUTH_ANONYMOUS_ORG_ROLE", value = "Viewer" },
       ]
 
       logConfiguration = {
