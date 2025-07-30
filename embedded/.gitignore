@@ -1,12 +1,27 @@
 # Visual Studio Code setting files
-.vscode/
+/.vscode/
 
 # ESP-IDF build files
-build/
+/build/
 
-# Dependency libraries
-# Please refer to README to check the dependency libraries
-components/
+# External libraries
+/components/**
+
+# LVGL configuration file
+!/components/lvgl/
+!/components/lvgl/lv_conf.h
+
+# Components developed in the project
+!/components/task/
+!/components/task/**
+!/components/ui/
+!/components/ui/**
 
 # Private data and personal text files
-private/
+/private/
+
+# ESP-IDF dependency file
+/dependencies.lock
+
+# TODO file
+/TODO.md
