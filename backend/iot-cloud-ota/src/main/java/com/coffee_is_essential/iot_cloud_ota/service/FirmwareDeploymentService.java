@@ -50,7 +50,6 @@ public class FirmwareDeploymentService {
         }
 
         // TODO RESTClient를 이용해서 MQTT 핸들러로 HTTP 전송
-
         return new FirmwareDeploymentDto(signedUrl, FirmwareDeployInfo.from(findFirmware, expiresAt), devices);
     }
 }

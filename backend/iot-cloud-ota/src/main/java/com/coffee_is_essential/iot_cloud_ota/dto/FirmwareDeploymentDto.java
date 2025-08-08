@@ -1,7 +1,7 @@
 package com.coffee_is_essential.iot_cloud_ota.dto;
 
-import com.coffee_is_essential.iot_cloud_ota.domain.FirmwareDeployInfo;
 import com.coffee_is_essential.iot_cloud_ota.domain.DeployTargetDeviceInfo;
+import com.coffee_is_essential.iot_cloud_ota.domain.FirmwareDeployInfo;
 
 import java.util.List;
 

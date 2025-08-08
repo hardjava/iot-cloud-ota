@@ -1,9 +1,9 @@
 package types
 
 type FirmwareDeployRequest struct {
-	SignedUrl string       `json:"signedUrl"`
-	FileInfo  FileInfo     `json:"fileInfo"`
-	Devices   []DeviceInfo `json:"devices"`
+	SignedUrl string      `json:"signedUrl"`
+	FileInfo  FileInfo    `json:"fileInfo"`
+	Devices   []DeviceIds `json:"devices"`
 }
 
 type FileInfo struct {
@@ -15,12 +15,70 @@ type FileInfo struct {
 	DeployedAt   string `json:"deployedAt"`
 }
 
-type DeviceInfo struct {
-	DeviceId int `json:"deviceId"`
-	GroupId  int `json:"groupId"`
-	RegionId int `json:"regionId"`
+type DeviceIds struct {
+	DeviceId int64 `json:"deviceId"`
+	GroupId  int64 `json:"groupId"`
+	RegionId int64 `json:"regionId"`
 }
 
 type FirmwareDeployResponse struct {
 	*ApiResponse
+}
+
+type FirmwareDownloadCommand struct {
+	CommandID string `json:"command_id"`
+	SignedURL string `json:"signed_url"`
+	Version   string `json:"version"`
+	Checksum  string `json:"checksum"`
+	Size      int64  `json:"size"`
+	Timeout   string `json:"timeout"`
+	Timestamp string `json:"timestamp"`
+}
+
+type FirmwareDownloadRequestAck struct {
+	CommandID string `json:"command_id"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+type FirmwareDownloadProgress struct {
+	CommandID       string `json:"command_id"`
+	Progress        int64  `json:"progress"`
+	DownloadedBytes int64  `json:"downloaded_bytes"`
+	TotalBytes      int64  `json:"total_bytes"`
+	SpeedKbps       int64  `json:"speed_kbps"`
+	EtaSeconds      int64  `json:"eta_seconds,omitempty"`
+	Timestamp       string `json:"timestamp"`
+}
+
+type FirmwareDownloadResult struct {
+	CommandID        string `json:"command_id"`
+	Status           string `json:"status"`
+	Message          string `json:"message"`
+	ChecksumVerified bool   `json:"checksum_verified"`
+	DownloadTime     int64  `json:"download_time"`
+	Timestamp        string `json:"timestamp"`
+}
+
+type FirmwareDownloadCancelAck struct {
+	CommandID string `json:"command_id"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+type FirmwareDownloadEvent struct {
+	CommandID        string
+	GroupID          int64
+	RegionID         int64
+	DeviceID         int64
+	Message          string
+	Status           string
+	Progress         int64
+	TotalBytes       int64
+	DownloadBytes    int64
+	SpeedKbps        int64
+	ChecksumVerified bool
+	DownloadTime     int64
 }
