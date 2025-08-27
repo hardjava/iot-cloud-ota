@@ -232,7 +232,7 @@ resource "aws_security_group" "questdb" {
     from_port       = 8812
     to_port         = 8812
     protocol        = "tcp"
-    security_groups = [aws_security_group.bastion_sg.id]
+    security_groups = [aws_security_group.bastion_sg.id, aws_security_group.backend.id]
   }
 
   ingress {
@@ -307,6 +307,27 @@ resource "aws_security_group" "mqtt_handler" {
     to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.backend_alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "elasticache" {
+  name        = "iot-cloud-ota-elasticache-sg"
+  description = "Security group for ElastiCache Redis"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.backend.id]
+    description     = "Redis access from Backend and Lambda"
   }
 
   egress {
