@@ -1,3 +1,20 @@
+data "aws_secretsmanager_secret" "questdb" {
+  name = "iot-cloud-ota-questdb-credentials"
+}
+
+data "aws_secretsmanager_secret_version" "questdb" {
+  secret_id = data.aws_secretsmanager_secret.questdb.id
+}
+
+locals {
+  questdb_credentials = jsondecode(data.aws_secretsmanager_secret_version.questdb.secret_string)
+  // questdb_credentials has the structure:
+  // {
+  //    "username": "USERNAME",
+  //    "password": "PASSWORD",
+  // }
+}
+
 resource "aws_ebs_volume" "questdb_volume" {
   availability_zone = aws_subnet.private_a.availability_zone
   size              = 20

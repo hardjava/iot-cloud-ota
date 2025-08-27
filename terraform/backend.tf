@@ -73,6 +73,10 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "CLOUDFRONT_DOMAIN", value = aws_cloudfront_distribution.firmware_distribution.domain_name },
         { name = "CLOUDFRONT_SECRET", value = data.aws_secretsmanager_secret.private_signing_key.name },
         { name = "CORS_ALLOWED_ORIGINS", value = "http://${aws_s3_bucket_website_configuration.frontend_bucket.website_endpoint}" },
+        { name = "QUESTDB_DATASOURCE_URL", value = "jdbc:postgresql://${aws_instance.questdb.private_ip}:8812/qdb" },
+        { name = "QUESTDB_DATASOURCE_USERNAME", value = local.questdb_credentials.username },
+        { name = "QUESTDB_DATASOURCE_PASSWORD", value = local.questdb_credentials.password },
+        { name = "MQTT_HANDLER_BASE_URL", value = "http://${aws_service_discovery_service.mqtt_handler.name}.${aws_service_discovery_private_dns_namespace.main.name}:8080" },
       ]
 
       logConfiguration = {
