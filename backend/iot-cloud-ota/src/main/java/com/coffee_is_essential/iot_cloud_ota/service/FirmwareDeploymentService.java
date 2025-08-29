@@ -8,6 +8,7 @@ import com.coffee_is_essential.iot_cloud_ota.dto.FirmwareDeploymentRequestDto;
 import com.coffee_is_essential.iot_cloud_ota.entity.*;
 import com.coffee_is_essential.iot_cloud_ota.enums.DeploymentStatus;
 import com.coffee_is_essential.iot_cloud_ota.enums.DeploymentType;
+import com.coffee_is_essential.iot_cloud_ota.enums.OverallStatus;
 import com.coffee_is_essential.iot_cloud_ota.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -43,6 +44,7 @@ public class FirmwareDeploymentService {
     private final RestClient restClient;
     private final QuestDbRepository questDbRepository;
     private final CloudFrontSignedUrlService cloudFrontSignedUrlService;
+    private final DeploymentRedisService deploymentRedisService;
     private static final int TIMEOUT = 10;
 
     /**
@@ -74,17 +76,11 @@ public class FirmwareDeploymentService {
 
         Date expiresAt = Date.from(Instant.now().plus(Duration.ofMinutes(TIMEOUT)));
         FirmwareDeployInfo deployInfo = FirmwareDeployInfo.from(findFirmware, expiresAt);
-        String signedUrl;
-
-        try {
-            signedUrl = cloudFrontSignedUrlService.generateSignedUrl(findFirmware.getS3Path(), expiresAt);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "CloudFront 서명 URL 생성 실패", e);
-        }
+        String signedUrl = cloudFrontSignedUrlService.generateSignedUrl(findFirmware.getS3Path(), expiresAt);
 
         FirmwareDeployment firmwareDeployment = new FirmwareDeployment(findFirmware, deployInfo.deploymentId(), requestDto.deploymentType(), deployInfo.deployedAt().toLocalDateTime(), deployInfo.expiresAt().toLocalDateTime());
         firmwareDeploymentRepository.save(firmwareDeployment);
-        overallDeploymentStatusRepository.save(new OverallDeploymentStatus(firmwareDeployment, DeploymentStatus.IN_PROGRESS));
+        overallDeploymentStatusRepository.save(new OverallDeploymentStatus(firmwareDeployment, OverallStatus.IN_PROGRESS));
         saveFirmwareDeploymentDevices(devices, firmwareDeployment, DeploymentStatus.IN_PROGRESS);
 
         List<DeployTargetDeviceInfo> deviceInfos = devices
@@ -92,8 +88,13 @@ public class FirmwareDeploymentService {
                 .map(DeployTargetDeviceInfo::from)
                 .toList();
 
+        if (deviceInfos.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
+        }
+
         FirmwareDeploymentDto deploymentDto = new FirmwareDeploymentDto(signedUrl, deployInfo, deviceInfos, TIMEOUT);
         sendMqttHandler(deploymentDto);
+        deploymentRedisService.addDevices(firmwareDeployment.getCommandId(), deviceInfos);
         return deploymentDto;
     }
 
@@ -165,11 +166,22 @@ public class FirmwareDeploymentService {
      */
     private FirmwareDeploymentMetadata getFirmwareDeploymentMetadata(FirmwareDeployment firmwareDeployment) {
         Long deploymentId = firmwareDeployment.getId();
-        List<DeploymentStatusCount> countList = firmwareDeploymentDeviceRepository.countStatusByLatestDeployment(deploymentId);
+        ProgressCount progressCount = getProgressCount(deploymentId);
         List<Target> targetInfo = getTargetList(firmwareDeployment);
         OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(firmwareDeployment.getId());
 
-        return FirmwareDeploymentMetadata.of(firmwareDeployment, targetInfo, countList, status.getDeploymentStatus());
+        return FirmwareDeploymentMetadata.of(firmwareDeployment, targetInfo, progressCount, status.getOverallStatus());
+    }
+
+    /**
+     * 배포 id를 통해 totalCount, successCount, inProgressCount, failedCount를 계산합니다.
+     *
+     * @param deploymentId 배포 id
+     * @return totalCount, successCount, inProgressCount, failedCount를 멤버로 가지고 있는 ProgressCount
+     */
+    private ProgressCount getProgressCount(Long deploymentId) {
+        List<DeploymentStatusCount> countList = firmwareDeploymentDeviceRepository.countStatusByLatestDeployment(deploymentId);
+        return ProgressCount.from(countList);
     }
 
     /**
@@ -184,12 +196,12 @@ public class FirmwareDeploymentService {
         FirmwareDeployment deployment = firmwareDeploymentRepository.findByIdOrElseThrow(id);
         OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(id);
         List<Target> targetInfo = getTargetList(deployment);
-        List<DeploymentStatusCount> countList = firmwareDeploymentDeviceRepository.countStatusByLatestDeployment(id);
+        ProgressCount progressCount = getProgressCount(id);
         List<DeviceDeploymentStatus> downloadEvents = questDbRepository.findLatestPerDeviceByCommandId(deployment.getCommandId()).stream()
                 .map(DeviceDeploymentStatus::from)
                 .toList();
 
-        return DetailDeploymentResponseDto.of(deployment, targetInfo, downloadEvents, countList, status);
+        return DetailDeploymentResponseDto.of(deployment, targetInfo, downloadEvents, progressCount, status);
     }
 
     /**
