@@ -95,6 +95,7 @@ void ui_debugScreen_screen_init(void)
     lv_obj_set_x(ui_debugTextArea, -200);
     lv_obj_set_y(ui_debugTextArea, 30);
     lv_obj_set_align(ui_debugTextArea, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_debugTextArea, LV_OBJ_FLAG_CLICK_FOCUSABLE);      /// Flags
 
     ui_debugCmdContainer = lv_obj_create(ui_debugScreen);
     lv_obj_remove_style_all(ui_debugCmdContainer);

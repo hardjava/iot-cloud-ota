@@ -58,7 +58,7 @@ void ui_mainScreen_screen_init(void)
 
     ui_mainLableContainer = lv_obj_create(ui_mainScreen);
     lv_obj_remove_style_all(ui_mainLableContainer);
-    lv_obj_set_width(ui_mainLableContainer, 180);
+    lv_obj_set_width(ui_mainLableContainer, 190);
     lv_obj_set_height(ui_mainLableContainer, 110);
     lv_obj_set_x(ui_mainLableContainer, 300);
     lv_obj_set_y(ui_mainLableContainer, -175);
@@ -66,8 +66,8 @@ void ui_mainScreen_screen_init(void)
     lv_obj_clear_flag(ui_mainLableContainer, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
     ui_mainFirmwareLabel = lv_label_create(ui_mainLableContainer);
-    lv_obj_set_width(ui_mainFirmwareLabel, 180);
     lv_obj_set_height(ui_mainFirmwareLabel, 14);
+    lv_obj_set_width(ui_mainFirmwareLabel, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_x(ui_mainFirmwareLabel, 0);
     lv_obj_set_y(ui_mainFirmwareLabel, -10);
     lv_obj_set_align(ui_mainFirmwareLabel, LV_ALIGN_CENTER);
@@ -75,8 +75,8 @@ void ui_mainScreen_screen_init(void)
     lv_obj_set_style_text_align(ui_mainFirmwareLabel, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_mainWiFiLabel = lv_label_create(ui_mainLableContainer);
-    lv_obj_set_width(ui_mainWiFiLabel, 180);
     lv_obj_set_height(ui_mainWiFiLabel, 14);
+    lv_obj_set_width(ui_mainWiFiLabel, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_x(ui_mainWiFiLabel, 0);
     lv_obj_set_y(ui_mainWiFiLabel, 10);
     lv_obj_set_align(ui_mainWiFiLabel, LV_ALIGN_CENTER);

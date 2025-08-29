@@ -5,8 +5,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#include <cJSON.h>
-
 #include "coffee/config.hpp"
 #include "coffee/debug_task.hpp"
 #include "coffee/ipc.hpp"
@@ -140,7 +138,7 @@ namespace coffee {
     static void wifi_textArea_timer_cb(lv_timer_t* t) {
         char buf[COFFEE_MAX_STR_BUF];
 
-        while (receive_message(wifiTextArea_q, buf)) {
+        while (queue_poll(wifiTextArea_q, buf)) {
             lv_textarea_add_text(ui_wifiTextArea, buf);
         }
     }
@@ -148,7 +146,7 @@ namespace coffee {
     static void debug_textArea_timer_cb(lv_timer_t* t) {
         char buf[COFFEE_MAX_STR_BUF];
 
-        while (receive_message(debugTextArea_q, buf)) {
+        while (queue_poll(debugTextArea_q, buf)) {
             lv_textarea_add_text(ui_debugTextArea, buf);
         }
     }
@@ -312,10 +310,11 @@ extern "C" {
     // called when the wifiRestoreButton on wifiScreen is clicked
 	void wifi_restore(lv_event_t * e)
 	{
-		const char *last_ssid = nullptr, *last_password = nullptr;
-		if (coffee::get_last_wifi(last_ssid, last_password)) {
-			lv_textarea_set_text(ui_wifiSsidTextArea, last_ssid);
-			lv_textarea_set_text(ui_wifiPwTextArea, last_password);
+		std::string last_ssid = "", last_password = "";
+        coffee::get_last_wifi(last_ssid, last_password);
+		if (last_ssid != "") {
+			lv_textarea_set_text(ui_wifiSsidTextArea, last_ssid.c_str());
+			lv_textarea_set_text(ui_wifiPwTextArea, last_password.c_str());
 
 			coffee::connect_wifi(last_ssid, last_password);
 		}
@@ -326,6 +325,8 @@ extern "C" {
 	void server_screen_load(lv_event_t * e)
 	{
 		lv_img_set_src(ui_serverBackImage, "S:/res/icon/share/back.bin");
+        lv_textarea_set_text(ui_serverAddressTextArea, "");
+        lv_textarea_set_text(ui_serverPortTextArea, "");
 	}
 
 	// serverScreen 삭제 시 호출
@@ -365,6 +366,7 @@ extern "C" {
 	void debug_screen_load(lv_event_t * e)
 	{
 		lv_img_set_src(ui_debugBackImage, "S:/res/icon/share/back.bin");
+        lv_textarea_set_text(ui_debugCmdTextArea, "");
 
         if (!coffee::debug_textArea_timer) {
             coffee::debug_textArea_timer = lv_timer_create(coffee::debug_textArea_timer_cb, 100, nullptr);
@@ -385,28 +387,47 @@ extern "C" {
     // called when the debugFunction1Button on debugScreen is clicked
 	void debug_function1(lv_event_t * e)
 	{
-		// (v0.0.3-alpha)펌웨어 ID를 읽어 해당하는 펌웨어를 SD 카드에 다운로드하는 함수
-        // (v0.0.3-alpha)function to read the firmware ID and download the corresponding firmware to the SD card
 		if (WiFi.status() != WL_CONNECTED) {
-            lv_textarea_add_text(ui_debugTextArea, "You are not connected to a network\nPlease connect to Wi-Fi first");
+            lv_textarea_add_text(ui_debugTextArea, "You are not connected to a network\nPlease connect to Wi-Fi first\n");
 
             return;
 		}
 
-        char* firmware_id = const_cast<char*>(lv_textarea_get_text(ui_debugCmdTextArea));
-        if (firmware_id[0] == '\0') {
-            lv_textarea_add_text(ui_debugTextArea, "Invalid firmware ID! aborted...");
+        const char* input_id = lv_textarea_get_text(ui_debugCmdTextArea);
+        if (input_id[0] == '\0') {
+            lv_textarea_add_text(ui_debugTextArea, "Invalid firmware ID!\n");
 
             return;
         }
 
-        coffee::debug1(reinterpret_cast<void*>(firmware_id));
+        std::string* firmware_id = new std::string(input_id);
+        if (!firmware_id) {
+            lv_textarea_add_text(ui_debugTextArea, "Memory allocation failed\n");
+
+            return;
+        }
+
+        coffee::debug1(firmware_id);
 	}
 
     // debugScreen의 debugFunction2Button 클릭 시 호출
     // called when the debugFunction2Button on debugScreen is clicked
 	void debug_function2(lv_event_t * e)
 	{
-		// 추가 예정
+        const char* input_version = lv_textarea_get_text(ui_debugCmdTextArea);
+        if (input_version[0] == '\0') {
+            lv_textarea_add_text(ui_debugTextArea, "Invalid firmware version!\n");
+
+            return;
+        }
+
+        std::string* firmware_version = new std::string(input_version);
+        if (!firmware_version) {
+            lv_textarea_add_text(ui_debugTextArea, "Memory allocation failed\n");
+
+            return;
+        }
+
+        coffee::debug2(firmware_version);
 	}
 }

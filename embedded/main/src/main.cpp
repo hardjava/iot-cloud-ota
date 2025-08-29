@@ -1,9 +1,11 @@
 #include <Arduino.h>
 
 #include <coffee_drv/init.hpp>
+#include <coffee_drv/utility.hpp>
 #include <coffee_drv/wifi.hpp>
 
 #include "coffee/config.hpp"
+#include "coffee/event_control.hpp"
 #include "coffee/ipc.hpp"
 #include "coffee/ui_task.hpp"
 
@@ -11,20 +13,28 @@ extern "C" void app_main(void) {
     initArduino();
     Serial.begin(115200);
 
-    Serial.printf("iot-cloud-ota capstone design: ver. %s\n", COFFEE_FIRMWARE_VER);
+    Serial.printf("[coffee/main][info] iot-cloud-ota capstone design: ver. %s\n", COFFEE_FIRMWARE_VER);
 
-    if (!coffee_drv::init_drivers()) {
+    if (!coffee_drv::init_drivers() || !coffee::init_ipc_queue()) {
         return;
     }
 
-    coffee::init_ipc_queue();
-
-    coffee::init_ui_task();
+    // coffee_drv::set_mem_monitor(1000);
 
     coffee::init_network_config();
 
-    const char *last_ssid = nullptr, *last_password = nullptr;
-    if (coffee::get_last_wifi(last_ssid, last_password)) {
-        coffee_drv::init_wifi_sta(last_ssid, last_password);
+    coffee::init_mtx();
+
+    coffee::init_ui_task();
+
+    coffee::init_dbg_overlay();
+
+    if (coffee::wifi_config) {
+        Serial.println("[coffee/main][info] attempting to restore previous network connection...");
+        std::string last_ssid = "", last_password = "";
+        coffee::get_last_wifi(last_ssid, last_password);
+        if (last_ssid != "") {
+            coffee_drv::init_wifi_sta(last_ssid, last_password);
+        }
     }
 }

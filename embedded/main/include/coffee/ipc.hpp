@@ -1,6 +1,10 @@
 #ifndef COFFEE_IPC_HPP
 #define COFFEE_IPC_HPP
 
+#include <cstdarg>
+#include <cstdio>
+#include <string>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
@@ -25,15 +29,19 @@ namespace coffee {
      * 
      *        sends a message using the queue
      * 
-     * @param queue 메시지를 송신할 큐
+     * @param serial_print 시리얼 모니터 동시 출력 여부
      * 
-     *              the queue to which the message will be sent
+     *                     whether to also print to the serial monitor
      * 
-     * @param text 송신 텍스트
+     * @param fmt 출력 포맷
      * 
-     *             the text message to send
+     *            output format string
+     * 
+     * @param ... 출력 포맷 값
+     * 
+     *            values corresponding to the format string
      */
-    void send_message(QueueHandle_t& queue, const char* text);
+    void queue_printf(QueueHandle_t& queue, std::string tag, bool serial_print, const char* fmt, ...);
 
     /**
      * @brief 큐를 이용하여 메시지를 수신합니다
@@ -52,10 +60,12 @@ namespace coffee {
      * 
      *         whether the message was successfully received
      */
-    bool receive_message(QueueHandle_t& queue, char* msg_out);
+    bool queue_poll(QueueHandle_t& queue, char* msg_out);
 
     extern QueueHandle_t wifiTextArea_q;
 
     extern QueueHandle_t debugTextArea_q;
+
+    extern QueueHandle_t dbg_overlay_q;
 }
 #endif

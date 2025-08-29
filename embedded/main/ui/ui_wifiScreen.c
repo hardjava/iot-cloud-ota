@@ -130,6 +130,7 @@ void ui_wifiScreen_screen_init(void)
     lv_obj_set_x(ui_wifiTextArea, -200);
     lv_obj_set_y(ui_wifiTextArea, 30);
     lv_obj_set_align(ui_wifiTextArea, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_wifiTextArea, LV_OBJ_FLAG_CLICK_FOCUSABLE);      /// Flags
 
     ui_wifiSsidContainer = lv_obj_create(ui_wifiScreen);
     lv_obj_remove_style_all(ui_wifiSsidContainer);

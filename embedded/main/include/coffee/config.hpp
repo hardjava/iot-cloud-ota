@@ -1,8 +1,17 @@
 #ifndef COFFEE_MAIN_CONFIG_HPP
 #define COFFEE_MAIN_CONFIG_HPP
 
+#define COFFEE_STR_HELPER(x) #x
+#define COFFEE_STR(x) COFFEE_STR_HELPER(x)
+
 /**
- * @def COFFEE_FIRMWARE_NUM
+ * @def COFFEE_FIRMWARE_VER_MAJOR
+ * 
+ * @def COFFEE_FIRMWARE_VER_MINOR
+ * 
+ * @def COFFEE_FIRMWARE_VER_PATCH
+ * 
+ * @def COFFEE_FIRMWARE_VER_NUM
  * 
  * @def COFFEE_ALPHA_TEST
  * 
@@ -14,31 +23,48 @@
  * 
  *        firmware version information
  */
+#define COFFEE_FIRMWARE_VER_MAJOR 0
+#define COFFEE_FIRMWARE_VER_MINOR 0
+#define COFFEE_FIRMWARE_VER_PATCH 3
 
-#define COFFEE_FIRMWARE_NUM "0.0.3"
+#define COFFEE_FIRMWARE_VER_NUM COFFEE_STR(COFFEE_FIRMWARE_VER_MAJOR) "." COFFEE_STR(COFFEE_FIRMWARE_VER_MINOR) "." COFFEE_STR(COFFEE_FIRMWARE_VER_PATCH)
+
 #define COFFEE_ALPHA_TEST 1
 #define COFFEE_BETA_TEST  0
-
 #if (COFFEE_ALPHA_TEST && COFFEE_BETA_TEST)
-  #error "only one of COFFEE_ALPHA_TEST or COFFEE_BETA_TEST can be 1"
+    #error "only one of COFFEE_ALPHA_TEST or COFFEE_BETA_TEST can be 1"
 #endif
 
 #if COFFEE_ALPHA_TEST
-  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_NUM " alpha"
+  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_VER_NUM "-alpha"
 #elif COFFEE_BETA_TEST
-  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_NUM " beta"
+  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_VER_NUM "-beta"
 #else
-  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_NUM
+  #define COFFEE_FIRMWARE_VER COFFEE_FIRMWARE_VER_NUM
 #endif
 
-/**
- * @def COFFEE_AD_TERM
- * 
- * @brief 광고 이미지 변경 주기(ms)
- * 
- *        interval for switching advertisement images in milliseconds
+
+/*
+   이벤트 제어 설정
+
+   event control configurations
  */
-#define COFFEE_AD_TERM 5000
+
+/**
+ * @def COFFEE_MTX_TIMEOUT_MS
+ * 
+ * @brief 뮤텍스 잠금 대기 시간
+ * 
+ *        mutex lock waiting time in milliseconds
+ */
+#define COFFEE_MTX_TIMEOUT_MS 100
+
+
+/*
+   IPC 설정
+
+   IPC configurations
+ */
 
 /**
  * @def COFFEE_QUEUE_SIZE
@@ -56,6 +82,22 @@
  */
 #define COFFEE_MAX_STR_BUF 256
 
+
+/*
+   네트워크 태스크 설정
+
+   network task configurations
+ */
+
+/**
+ * @def COFFEE_FILE_CHUNK_SIZE
+ * 
+ * @brief 파일 청크 크기
+ * 
+ *        file chunk size
+ */
+#define COFFEE_FILE_CHUNK_SIZE 0x19000
+
 /**
  * @def COFFEE_NETWORK_TIMEOUT_MS
  * 
@@ -65,14 +107,24 @@
  */
 #define COFFEE_NETWORK_TIMEOUT_MS 10000
 
-/**
- * @def COFFEE_FILE_CHUNK_SIZE
- * 
- * @brief 파일 다운로드 청크 크기
- * 
- *        file download chunk size
+
+/*
+   UI 태스크 설정
+
+   UI task configurations
  */
-#define COFFEE_FILE_CHUNK_SIZE 0x19000
+
+/**
+ * @def COFFEE_AD_TERM
+ * 
+ * @brief 광고 이미지 변경 주기(ms)
+ * 
+ *        interval for switching advertisement images in milliseconds
+ */
+#define COFFEE_AD_TERM 5000
+
+
+#include <string>
 
 #include <esp_heap_caps.h>
 
@@ -83,6 +135,10 @@
 #include <cJSON.h>
 
 #define COFFEE_CONFIG_JSON_MAX_BYTES 1024
+
+#define COFFEE_CONFIG_JSON_FILE_PATH "/res/network_config.json"
+
+#define COFFEE_TEMP_CONFIG_FILE_PATH "/res/network_config.json.tmp"
 
 namespace coffee {
     /**
@@ -109,7 +165,7 @@ namespace coffee {
      * 
      *         whether loading the last Wi-Fi connection information succeeded
      */
-    bool get_last_wifi(const char*& ssid_out, const char*& pw_out);
+    void get_last_wifi(std::string& ssid_out, std::string& pw_out);
 
     /**
      * @brief config_root의 내용을 이용하여 파일을 업데이트 합니다
@@ -120,7 +176,7 @@ namespace coffee {
      * 
      *         whether the file update was successful
      */
-    bool write_config(void);
+    void write_config(void);
 
     extern cJSON* config_root;
 
