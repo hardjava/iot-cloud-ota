@@ -6,9 +6,12 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.coffee_is_essential.iot_cloud_ota.domain.S3FileHashResult;
+import com.coffee_is_essential.iot_cloud_ota.dto.AdsUploadPresignedUrlResponseDto;
 import com.coffee_is_essential.iot_cloud_ota.dto.DownloadPresignedUrlResponseDto;
 import com.coffee_is_essential.iot_cloud_ota.dto.UploadPresignedUrlResponseDto;
+import com.coffee_is_essential.iot_cloud_ota.entity.AdvertisementMetadata;
 import com.coffee_is_essential.iot_cloud_ota.entity.FirmwareMetadata;
+import com.coffee_is_essential.iot_cloud_ota.repository.AdvertisementMetadataJpaRepository;
 import com.coffee_is_essential.iot_cloud_ota.repository.FirmwareMetadataJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +40,7 @@ public class S3Service {
 
     private final AmazonS3 amazonS3;
     private final FirmwareMetadataJpaRepository firmwareMetadataJpaRepository;
+    private final AdvertisementMetadataJpaRepository advertisementMetadataJpaRepository;
 
     /**
      * 지정한 버전과 파일 이름을 기반으로 S3에 업로드할 수 있는 Presigned URL을 생성합니다.
@@ -56,6 +60,26 @@ public class S3Service {
         String url = amazonS3.generatePresignedUrl(generatedPresignedUrlRequest).toString();
 
         return new UploadPresignedUrlResponseDto(url, path);
+    }
+
+    @Transactional
+    public AdsUploadPresignedUrlResponseDto getAdsPresignedUploadUrl(String title) {
+        if (advertisementMetadataJpaRepository.findByTitle(title).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "해당 제목의 광고가 이미 존재합니다.");
+        }
+
+        String originalPath = createOriginalFilePath(title);
+        String binaryPath = createBinaryFilePath(title);
+        GeneratePresignedUrlRequest originUrlRequest = generatePresignedUploadUrl(bucketName, originalPath);
+        GeneratePresignedUrlRequest binaryUrlRequest = generatePresignedUploadUrl(bucketName, binaryPath);
+
+        String originalUrl = amazonS3.generatePresignedUrl(originUrlRequest).toString();
+        String binaryUrl = amazonS3.generatePresignedUrl(binaryUrlRequest).toString();
+
+        UploadPresignedUrlResponseDto original = new UploadPresignedUrlResponseDto(originalUrl, originalPath);
+        UploadPresignedUrlResponseDto binary = new UploadPresignedUrlResponseDto(binaryUrl, binaryPath);
+
+        return new AdsUploadPresignedUrlResponseDto(original, binary);
     }
 
     /**
@@ -90,6 +114,29 @@ public class S3Service {
         }
 
         GeneratePresignedUrlRequest generatedPresignedUrlRequest = generatePresignedDownloadUrl(bucketName, findMetadata.get().getS3Path());
+        String url = amazonS3.generatePresignedUrl(generatedPresignedUrlRequest).toString();
+
+        return new DownloadPresignedUrlResponseDto(url);
+    }
+
+    /**
+     * 광고 메타데이터를 조회하여 S3 Presigned 다운로드 URL을 생성합니다.
+     * 광고 제목으로 메타데이터 조회
+     * 존재하지 않으면 404 에러 발생
+     * 존재하면 해당 광고의 원본 S3 경로를 기반으로 Presigned URL 생성
+     *
+     * @param title 광고 제목
+     * @return Presigned 다운로드 URL 응답 DTO
+     */
+    @Transactional
+    public DownloadPresignedUrlResponseDto getAdsPresignedDownloadUrl(String title) {
+        Optional<AdvertisementMetadata> findAds = advertisementMetadataJpaRepository.findByTitle(title);
+
+        if (findAds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 광고 정보를 찾을 수 없습니다.");
+        }
+
+        GeneratePresignedUrlRequest generatedPresignedUrlRequest = generatePresignedDownloadUrl(bucketName, findAds.get().getOriginalS3Path());
         String url = amazonS3.generatePresignedUrl(generatedPresignedUrlRequest).toString();
 
         return new DownloadPresignedUrlResponseDto(url);
@@ -137,6 +184,18 @@ public class S3Service {
         String uuid = UUID.randomUUID().toString();
 
         return String.format("%s/%s/%s", version, uuid, fileName);
+    }
+
+    private String createOriginalFilePath(String title) {
+        String uuid = UUID.randomUUID().toString();
+
+        return String.format("ads/origin/%s/%s", uuid, title);
+    }
+
+    private String createBinaryFilePath(String title) {
+        String uuid = UUID.randomUUID().toString();
+
+        return String.format("ads/binary/%s/%s", uuid, title);
     }
 
     /**
