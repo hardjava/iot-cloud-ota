@@ -62,9 +62,11 @@ namespace coffee {
      */
     bool queue_poll(QueueHandle_t& queue, char* msg_out);
 
-    extern QueueHandle_t wifiTextArea_q;
-
     extern QueueHandle_t debugTextArea_q;
+
+    extern QueueHandle_t serverTextArea_q;
+
+    extern QueueHandle_t wifiTextArea_q;
 
     extern QueueHandle_t dbg_overlay_q;
 }

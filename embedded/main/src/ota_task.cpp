@@ -8,12 +8,14 @@ namespace coffee {
      */
     static void ota_task(void* task_param);
 
+    // 로그에 출력되는 태그
+    // tag used for log messages
     static const std::string TAG = "coffee/ota_task";
 
     Firmware find_firmware_file(std::string version) {
         Firmware fw;
 
-        std::string target_file_path = std::string("/ota/v") + version + ".bin";
+        std::string target_file_path = std::string("/ota/") + version + ".bin";
 
         if (!SD.exists(target_file_path.c_str())) {
             queue_printf(dbg_overlay_q, TAG, true, "[error] the firmware file for the corresponding version cannot be found\n");
@@ -40,7 +42,7 @@ namespace coffee {
         
         Firmware* task_param = new Firmware(target_firmware);
 
-        if (xTaskCreatePinnedToCore(ota_task, "ota", 8192, task_param, tskIDLE_PRIORITY + 3, nullptr, 0) != pdPASS) {
+        if (xTaskCreatePinnedToCore(ota_task, "ota", 8192, task_param, tskIDLE_PRIORITY + 6, nullptr, 0) != pdPASS) {
             delete task_param;
         }
     }
@@ -191,7 +193,7 @@ namespace coffee {
             }
 
             total_written += read_size;
-            queue_printf(dbg_overlay_q, TAG, true, "[info] written firmware: %zuB / %zuB\n", total_written, firmware_size);
+            Serial.printf("[coffee/ota_task][info] written firmware: %zuB / %zuB\n", total_written, firmware_size);
         }
 
         heap_caps_free(file_buf);

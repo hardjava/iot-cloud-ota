@@ -2,6 +2,8 @@
 #define COFFEE_NETWORK_TASK_HPP
 
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <string>
 
 #include <esp_heap_caps.h>
@@ -9,6 +11,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+
+#include <mbedtls/sha256.h>
 
 #include <Arduino.h>
 #include <FS.h>
@@ -24,6 +28,7 @@
 #include "coffee/config.hpp"
 #include "coffee/event_control.hpp"
 #include "coffee/ipc.hpp"
+#include "coffee/json_task.hpp"
 
 namespace coffee {
     /**
@@ -46,6 +51,8 @@ namespace coffee {
     public:
         std::string signed_url;
         std::string storage_path;
+        std::string hash_256;
+        std::size_t file_size;
     };
 
     /**
@@ -68,15 +75,9 @@ namespace coffee {
      * 
      *        downloads a file from the given signed URL and saves it to the SD card
      * 
-     * @param signed_url 파일을 다운로드할 Signed URL
-     * 
-     *                   the signed URL from which the file will be downloaded
-     * 
-     * @param storage_path 파일을 저장할 SD 카드 내 위치
-     * 
-     *                     the path on the SD card where the file will be stored
+     * @param dl_info 다운로드 파일 정보
      */
-    void download_file(std::string signed_url, std::string storage_path);
+    void download_file(const Download& dl_info);
 
     extern QueueHandle_t wifiTextArea_q;
 

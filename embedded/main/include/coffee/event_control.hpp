@@ -1,6 +1,8 @@
 #ifndef COFFEE_EVENT_CONTROL_HPP
 #define COFFEE_EVENT_CONTROL_HPP
 
+#include <cstddef>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
@@ -25,11 +27,15 @@ namespace coffee {
      * 
      *            the mutex to be locked
      * 
+     * @param wait_time 최대 잠금 대기 시간
+     * 
+     *                  maximum waiting time for the lock
+     * 
      * @return 잠금 성공 여부
      * 
      *         whether the lock operation succeeded
      */
-    bool lock_mtx(SemaphoreHandle_t& mtx);
+    bool lock_mtx(SemaphoreHandle_t& mtx, std::size_t wait_time = COFFEE_MTX_TIMEOUT_MS);
 
     /**
      * @brief 뮤텍스를 잠금 해제합니다
@@ -43,6 +49,10 @@ namespace coffee {
     void unlock_mtx(SemaphoreHandle_t& mtx);
 
     extern SemaphoreHandle_t debug_mtx;
+
+    extern SemaphoreHandle_t json_mtx;
+
+    extern SemaphoreHandle_t mqtt_mtx;
 
     extern SemaphoreHandle_t network_mtx;
 

@@ -2,46 +2,56 @@
 
 namespace coffee {
     /**
+     * @brief SD 카드에서 모든 광고 이미지 주소를 불러옵니다
+     * 
+     *        loads all advertisement image addresses from the SD card
+     */
+    static bool get_ads(void);
+
+    /**
      * @brief UI 업데이트 태스크
      * 
      *        UI updating task
      */
     static void ui_task(void* task_param);
 
-    /**
-     * @brief 디버그 오버레이 배경
-     * 
-     *        background object of the debug overlay
-     */
+    //디버그 오버레이 배경
+    // background object of the debug overlay
     static lv_obj_t* dbg_overlay_bar = nullptr;
 
-    /**
-     * @brief 디버그 오버레이 배경 스타일
-     * 
-     *        style for the background of the debug overlay
-     */
+    // 디버그 오버레이 배경 스타일
+    // style for the background of the debug overlay
     static lv_style_t dbg_overlay_bar_style;
 
-    /**
-     * @brief 디버그 오버레이 레이블
-     * 
-     *        label object of the debug overlay
-     */
+    // 디버그 오버레이 레이블
+    // label object of the debug overlay
     static lv_obj_t* dbg_overlay_label = nullptr;
 
-    /**
-     * @brief 디버그 오버레이 레이블 스타일
-     * 
-     *        style for the label of the debug overlay
-     */
+    // 디버그 오버레이 레이블 스타일
+    // style for the label of the debug overlay
     static lv_style_t dbg_overlay_label_style;
+    
+    /**
+     * @brief 광고 이미지 주소 리스트
+     * 
+     *        list of advertisement image addresses
+     */
+    std::vector<std::string> ads;
 
-    void init_ui_task(void) {
+    bool init_ui_task(void) {
         Serial.println("[coffee/ui_task][info] initializing UI...");
+
+        if (!get_ads()) {
+            Serial.println("[coffee/ui_task][error] failed to read the list of ad images");
+
+            return false;
+        }
 
         ui_init();
 
         xTaskCreatePinnedToCore(coffee::ui_task, "ui", 8192, nullptr, tskIDLE_PRIORITY + 2, nullptr, 1);
+
+        return true;
     }
 
     void init_dbg_overlay(void) {
@@ -73,6 +83,41 @@ namespace coffee {
         lv_label_set_text(dbg_overlay_label, "[coffee/ui_task][info] debug overlay initialization success!");
         
         Serial.println("[coffee/ui_task][info] debug overlay initialization success!");
+    }
+
+    void toggle_dbg_overlay(void) {
+        if (!dbg_overlay_bar) {
+            return;
+        }
+
+        if (lv_obj_has_flag(dbg_overlay_bar, LV_OBJ_FLAG_HIDDEN)) {
+            lv_obj_clear_flag(dbg_overlay_bar, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(dbg_overlay_bar, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+
+    static bool get_ads(void) {
+        static const std::string AD_DIR = "/res/contents";
+        File dir = SD.open(AD_DIR.c_str());
+        if (!dir) {
+            Serial.printf("[coffee/ui_task][error] failed to open ad directory\n");
+
+            return false;
+        }
+
+        File ad;
+        while ((ad = dir.openNextFile())) {
+            if (!ad.isDirectory()) {
+                std::string ad_path = std::string("S:") + AD_DIR + "/" + ad.name();
+                ads.push_back(ad_path);
+            }
+            ad.close();
+        }
+
+        dir.close();
+
+        return true;
     }
 
     static void ui_task(void* task_param) {

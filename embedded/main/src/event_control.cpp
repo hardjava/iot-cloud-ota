@@ -9,6 +9,20 @@ namespace coffee {
     SemaphoreHandle_t debug_mtx = nullptr;
 
     /**
+     * @brief cJSON 관련 이벤트를 제어하는 뮤텍스
+     * 
+     *        mutex used to control cJSON related events
+     */
+    SemaphoreHandle_t json_mtx = nullptr;
+
+    /**
+     * @brief MQTT 관련 이벤트를 제어하는 뮤텍스
+     * 
+     *        mutex used to control MQTT related events
+     */
+    SemaphoreHandle_t mqtt_mtx = nullptr;
+
+    /**
      * @brief Wi-Fi 관련 이벤트를 제어하는 뮤텍스
      * 
      *        mutex used to control Wi-Fi related events
@@ -26,6 +40,14 @@ namespace coffee {
         if (!debug_mtx) {
             debug_mtx = xSemaphoreCreateMutex();
         }
+        
+        if (!json_mtx) {
+            json_mtx = xSemaphoreCreateMutex();
+        }
+
+        if (!mqtt_mtx) {
+            mqtt_mtx = xSemaphoreCreateMutex();
+        }
 
         if (!network_mtx) {
             network_mtx = xSemaphoreCreateMutex();
@@ -38,8 +60,8 @@ namespace coffee {
         Serial.println("[coffee/event_control][info] mutex initialization success!");
     }
 
-    bool lock_mtx(SemaphoreHandle_t& mtx) {
-        return (xSemaphoreTake(mtx, pdMS_TO_TICKS(COFFEE_MTX_TIMEOUT_MS)) == pdTRUE);
+    bool lock_mtx(SemaphoreHandle_t& mtx, std::size_t wait_time) {
+        return (xSemaphoreTake(mtx, pdMS_TO_TICKS(wait_time)) == pdTRUE);
     }
     
     void unlock_mtx(SemaphoreHandle_t& mtx) {

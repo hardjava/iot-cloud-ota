@@ -1,12 +1,18 @@
 {
-  "wifi": {
-    "auto_connect": true,
-    "last_ssid": "nacho_iphone",
-    "last_password": "caffeinenicotine"
-  },
-  "mqtt": {
-    "auto_connect": false,
-    "last_server": "nacho2407.duckdns.org",
-    "last_port": 24072
-  }
+    "wifi": {
+        "auto_connect": true,
+        "last_ssid": "nacho_iphone",
+        "last_password": "caffeinenicotine"
+    },
+    "mqtt": {
+        "auto_connect": true,
+        "last_server": "emqx-nlb-bfefab8efb8db52f.elb.ap-northeast-2.amazonaws.com:1883",
+        "version": "v1",
+        "region": "Busan",
+        "store": "PNU",
+        "sub_topics": [
+            "command",
+            "debug"
+        ]
+    }
 }

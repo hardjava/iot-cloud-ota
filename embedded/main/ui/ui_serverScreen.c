@@ -11,9 +11,12 @@ lv_obj_t * ui_serverTextArea = NULL;
 lv_obj_t * ui_serverAddressContainer = NULL;
 lv_obj_t * ui_serverAddressLabel = NULL;
 lv_obj_t * ui_serverAddressTextArea = NULL;
-lv_obj_t * ui_serverPortContainer = NULL;
-lv_obj_t * ui_serverPortLabel = NULL;
-lv_obj_t * ui_serverPortTextArea = NULL;
+lv_obj_t * ui_serverRegionContainer = NULL;
+lv_obj_t * ui_serverRegionLabel = NULL;
+lv_obj_t * ui_serverRegionTextArea = NULL;
+lv_obj_t * ui_serverStoreContainer = NULL;
+lv_obj_t * ui_serverStoreLabel = NULL;
+lv_obj_t * ui_serverStoreTextArea = NULL;
 lv_obj_t * ui_serverSetButton = NULL;
 lv_obj_t * ui_serverSetLabel = NULL;
 lv_obj_t * ui_serverBackButton = NULL;
@@ -45,13 +48,26 @@ void ui_event_serverAddressTextArea(lv_event_t * e)
     }
 }
 
-void ui_event_serverPortTextArea(lv_event_t * e)
+void ui_event_serverRegionTextArea(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
 
     if(event_code == LV_EVENT_FOCUSED) {
         keyboardUpAnimation_Animation(ui_serverKeyboard, 0);
-        _ui_keyboard_set_target(ui_serverKeyboard,  ui_serverPortTextArea);
+        _ui_keyboard_set_target(ui_serverKeyboard,  ui_serverRegionTextArea);
+    }
+    if(event_code == LV_EVENT_DEFOCUSED) {
+        keyboardDownAnimation_Animation(ui_serverKeyboard, 0);
+    }
+}
+
+void ui_event_serverStoreTextArea(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if(event_code == LV_EVENT_FOCUSED) {
+        keyboardUpAnimation_Animation(ui_serverKeyboard, 0);
+        _ui_keyboard_set_target(ui_serverKeyboard,  ui_serverStoreTextArea);
     }
     if(event_code == LV_EVENT_DEFOCUSED) {
         keyboardDownAnimation_Animation(ui_serverKeyboard, 0);
@@ -90,7 +106,7 @@ void ui_serverScreen_screen_init(void)
     lv_obj_set_x(ui_serverLabel, -200);
     lv_obj_set_y(ui_serverLabel, -205);
     lv_obj_set_align(ui_serverLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_serverLabel, "Current Server: xxx.xxx.xxx.xxx:xxxx");
+    lv_label_set_text(ui_serverLabel, "Current Server: Loading...");
     lv_obj_set_style_text_align(ui_serverLabel, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_serverTextArea = lv_textarea_create(ui_serverScreen);
@@ -106,7 +122,7 @@ void ui_serverScreen_screen_init(void)
     lv_obj_set_width(ui_serverAddressContainer, 380);
     lv_obj_set_height(ui_serverAddressContainer, 50);
     lv_obj_set_x(ui_serverAddressContainer, 195);
-    lv_obj_set_y(ui_serverAddressContainer, -155);
+    lv_obj_set_y(ui_serverAddressContainer, -150);
     lv_obj_set_align(ui_serverAddressContainer, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_serverAddressContainer, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
@@ -116,51 +132,77 @@ void ui_serverScreen_screen_init(void)
     lv_obj_set_x(ui_serverAddressLabel, -130);
     lv_obj_set_y(ui_serverAddressLabel, 0);
     lv_obj_set_align(ui_serverAddressLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_serverAddressLabel, "SERVER");
+    lv_label_set_text(ui_serverAddressLabel, "Server");
     lv_obj_set_style_text_font(ui_serverAddressLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_serverAddressTextArea = lv_textarea_create(ui_serverAddressContainer);
     lv_obj_set_width(ui_serverAddressTextArea, 250);
     lv_obj_set_height(ui_serverAddressTextArea, LV_SIZE_CONTENT);    /// 50
     lv_obj_set_x(ui_serverAddressTextArea, 65);
-    lv_obj_set_y(ui_serverAddressTextArea, -2);
+    lv_obj_set_y(ui_serverAddressTextArea, 0);
     lv_obj_set_align(ui_serverAddressTextArea, LV_ALIGN_CENTER);
     lv_textarea_set_placeholder_text(ui_serverAddressTextArea, "Server's Address");
     lv_textarea_set_one_line(ui_serverAddressTextArea, true);
 
-    ui_serverPortContainer = lv_obj_create(ui_serverScreen);
-    lv_obj_remove_style_all(ui_serverPortContainer);
-    lv_obj_set_width(ui_serverPortContainer, 380);
-    lv_obj_set_height(ui_serverPortContainer, 50);
-    lv_obj_set_x(ui_serverPortContainer, 195);
-    lv_obj_set_y(ui_serverPortContainer, -55);
-    lv_obj_set_align(ui_serverPortContainer, LV_ALIGN_CENTER);
-    lv_obj_clear_flag(ui_serverPortContainer, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    ui_serverRegionContainer = lv_obj_create(ui_serverScreen);
+    lv_obj_remove_style_all(ui_serverRegionContainer);
+    lv_obj_set_width(ui_serverRegionContainer, 380);
+    lv_obj_set_height(ui_serverRegionContainer, 50);
+    lv_obj_set_x(ui_serverRegionContainer, 195);
+    lv_obj_set_y(ui_serverRegionContainer, -75);
+    lv_obj_set_align(ui_serverRegionContainer, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_serverRegionContainer, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_serverPortLabel = lv_label_create(ui_serverPortContainer);
-    lv_obj_set_width(ui_serverPortLabel, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_serverPortLabel, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_serverPortLabel, -130);
-    lv_obj_set_y(ui_serverPortLabel, 0);
-    lv_obj_set_align(ui_serverPortLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_serverPortLabel, "PORT");
-    lv_obj_set_style_text_font(ui_serverPortLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_serverRegionLabel = lv_label_create(ui_serverRegionContainer);
+    lv_obj_set_width(ui_serverRegionLabel, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_serverRegionLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_serverRegionLabel, -130);
+    lv_obj_set_y(ui_serverRegionLabel, 0);
+    lv_obj_set_align(ui_serverRegionLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_serverRegionLabel, "Region");
+    lv_obj_set_style_text_font(ui_serverRegionLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_serverPortTextArea = lv_textarea_create(ui_serverPortContainer);
-    lv_obj_set_width(ui_serverPortTextArea, 250);
-    lv_obj_set_height(ui_serverPortTextArea, LV_SIZE_CONTENT);    /// 50
-    lv_obj_set_x(ui_serverPortTextArea, 60);
-    lv_obj_set_y(ui_serverPortTextArea, 0);
-    lv_obj_set_align(ui_serverPortTextArea, LV_ALIGN_CENTER);
-    lv_textarea_set_placeholder_text(ui_serverPortTextArea, "Server's Port");
-    lv_textarea_set_one_line(ui_serverPortTextArea, true);
-    lv_textarea_set_password_mode(ui_serverPortTextArea, true);
+    ui_serverRegionTextArea = lv_textarea_create(ui_serverRegionContainer);
+    lv_obj_set_width(ui_serverRegionTextArea, 250);
+    lv_obj_set_height(ui_serverRegionTextArea, LV_SIZE_CONTENT);    /// 50
+    lv_obj_set_x(ui_serverRegionTextArea, 65);
+    lv_obj_set_y(ui_serverRegionTextArea, 0);
+    lv_obj_set_align(ui_serverRegionTextArea, LV_ALIGN_CENTER);
+    lv_textarea_set_placeholder_text(ui_serverRegionTextArea, "ex.) Busan");
+    lv_textarea_set_one_line(ui_serverRegionTextArea, true);
+
+    ui_serverStoreContainer = lv_obj_create(ui_serverScreen);
+    lv_obj_remove_style_all(ui_serverStoreContainer);
+    lv_obj_set_width(ui_serverStoreContainer, 380);
+    lv_obj_set_height(ui_serverStoreContainer, 50);
+    lv_obj_set_x(ui_serverStoreContainer, 195);
+    lv_obj_set_y(ui_serverStoreContainer, 0);
+    lv_obj_set_align(ui_serverStoreContainer, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_serverStoreContainer, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+
+    ui_serverStoreLabel = lv_label_create(ui_serverStoreContainer);
+    lv_obj_set_width(ui_serverStoreLabel, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_serverStoreLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_serverStoreLabel, -130);
+    lv_obj_set_y(ui_serverStoreLabel, 0);
+    lv_obj_set_align(ui_serverStoreLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_serverStoreLabel, "Store");
+    lv_obj_set_style_text_font(ui_serverStoreLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_serverStoreTextArea = lv_textarea_create(ui_serverStoreContainer);
+    lv_obj_set_width(ui_serverStoreTextArea, 250);
+    lv_obj_set_height(ui_serverStoreTextArea, LV_SIZE_CONTENT);    /// 50
+    lv_obj_set_x(ui_serverStoreTextArea, 65);
+    lv_obj_set_y(ui_serverStoreTextArea, 0);
+    lv_obj_set_align(ui_serverStoreTextArea, LV_ALIGN_CENTER);
+    lv_textarea_set_placeholder_text(ui_serverStoreTextArea, "ex.) PNU");
+    lv_textarea_set_one_line(ui_serverStoreTextArea, true);
 
     ui_serverSetButton = lv_btn_create(ui_serverScreen);
     lv_obj_set_width(ui_serverSetButton, 300);
     lv_obj_set_height(ui_serverSetButton, 70);
     lv_obj_set_x(ui_serverSetButton, 195);
-    lv_obj_set_y(ui_serverSetButton, 50);
+    lv_obj_set_y(ui_serverSetButton, 105);
     lv_obj_set_align(ui_serverSetButton, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_serverSetButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_serverSetButton, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -210,7 +252,8 @@ void ui_serverScreen_screen_init(void)
     lv_obj_set_align(ui_serverKeyboard, LV_ALIGN_CENTER);
 
     lv_obj_add_event_cb(ui_serverAddressTextArea, ui_event_serverAddressTextArea, LV_EVENT_ALL, NULL);
-    lv_obj_add_event_cb(ui_serverPortTextArea, ui_event_serverPortTextArea, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_serverRegionTextArea, ui_event_serverRegionTextArea, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_serverStoreTextArea, ui_event_serverStoreTextArea, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_serverSetButton, ui_event_serverSetButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_serverBackButton, ui_event_serverBackButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_serverScreen, ui_event_serverScreen, LV_EVENT_ALL, NULL);
@@ -228,9 +271,12 @@ void ui_serverScreen_screen_destroy(void)
     ui_serverAddressContainer = NULL;
     ui_serverAddressLabel = NULL;
     ui_serverAddressTextArea = NULL;
-    ui_serverPortContainer = NULL;
-    ui_serverPortLabel = NULL;
-    ui_serverPortTextArea = NULL;
+    ui_serverRegionContainer = NULL;
+    ui_serverRegionLabel = NULL;
+    ui_serverRegionTextArea = NULL;
+    ui_serverStoreContainer = NULL;
+    ui_serverStoreLabel = NULL;
+    ui_serverStoreTextArea = NULL;
     ui_serverSetButton = NULL;
     ui_serverSetLabel = NULL;
     ui_serverBackButton = NULL;

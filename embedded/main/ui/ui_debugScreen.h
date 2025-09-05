@@ -26,10 +26,13 @@ extern lv_obj_t * ui_debugFunction1Button;
 extern lv_obj_t * ui_debugFunction1Label;
 extern void ui_event_debugFunction2Button(lv_event_t * e);
 extern lv_obj_t * ui_debugFunction2Button;
-extern lv_obj_t * ui_wifiConnectLabel3;
+extern lv_obj_t * ui_debugFunction2Label;
 extern void ui_event_debugBackButton(lv_event_t * e);
 extern lv_obj_t * ui_debugBackButton;
 extern lv_obj_t * ui_debugBackImage;
+extern void ui_event_debugOnOffButton(lv_event_t * e);
+extern lv_obj_t * ui_debugOnOffButton;
+extern lv_obj_t * ui_debugOnOffLabel;
 extern lv_obj_t * ui_debugKeyboard;
 // CUSTOM VARIABLES
 

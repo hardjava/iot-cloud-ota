@@ -1,6 +1,9 @@
 #include "ui.h"
 
+#include <cstdint>
+#include <cstdlib>
 #include <string>
+#include <vector>
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -8,7 +11,9 @@
 #include "coffee/config.hpp"
 #include "coffee/debug_task.hpp"
 #include "coffee/ipc.hpp"
+#include "coffee/mqtt_task.hpp"
 #include "coffee/network_task.hpp"
+#include "coffee/ui_task.hpp"
 
 namespace coffee {
 	/**
@@ -25,6 +30,13 @@ namespace coffee {
 	 */
 	static void main_wifi_timer_cb(lv_timer_t* t);
 
+	/**
+	 * @brief FreeRTOS의 큐를 이용하여 debug 스크린의 debugTextArea에 디버깅 정보를 표시하는 lvgl 타이머 콜백 함수
+	 * 
+	 *        lvgl timer callback function that displays debugging information on the debugTextArea of the debug screen using a FreeRTOS queue
+	 */
+	static void debug_textArea_timer_cb(lv_timer_t* t);
+
     /**
      * @brief wifi 스크린에 Wi-Fi 연결 정보를 표현하는 lvgl 타이머 콜백 함수
      * 
@@ -35,24 +47,23 @@ namespace coffee {
 	/**
 	 * @brief FreeRTOS의 큐를 이용하여 wifi 스크린의 wifiTextArea에 Wi-Fi 연결 정보를 표시하는 lvgl 타이머 콜백 함수
 	 * 
-	 *        lvgl timer callback function that displays Wi-Fi connection information on the wifiTextArea of the Wi-Fi screen using a FreeRTOS queue
+	 *        lvgl timer callback function that displays Wi-Fi connection information on the wifiTextArea of the wifi screen using a FreeRTOS queue
 	 */
 	static void wifi_textArea_timer_cb(lv_timer_t* t);
 
-	/**
-	 * @brief FreeRTOS의 큐를 이용하여 debug 스크린의 debugTextArea에 디버깅 정보를 표시하는 lvgl 타이머 콜백 함수
-	 * 
-	 *        lvgl timer callback function that displays debugging information on the debugTextArea of the debug screen using a FreeRTOS queue
-	 */
-	static void debug_textArea_timer_cb(lv_timer_t* t);
+    /**
+     * @brief server 스크린에 MQTT server 연결 정보를 표현하는 lvgl 타이머 콜백 함수
+     * 
+     *        lvgl timer callback function for displaying MQTT server connection information on the server screen
+     */
+    static void server_info_timer_cb(lv_timer_t* t);
 
-	// 광고 이미지 파일
-    // advertisement image file
-	static const char* ads[3] = {
-		"S:/res/contents/ad1.bin",
-		"S:/res/contents/ad2.bin",
-		"S:/res/contents/ad3.bin"
-	};
+	/**
+	 * @brief FreeRTOS의 큐를 이용하여 server 스크린의 serverTextArea에 MQTT 서버 연결 정보를 표시하는 lvgl 타이머 콜백 함수
+	 * 
+	 *        lvgl timer callback function that displays MQTT server connection information on the serverTextArea of the server screen using a FreeRTOS queue
+	 */
+	static void server_textArea_timer_cb(lv_timer_t* t);
 
     // 현재 표시 중인 광고 인덱스
     // current advertisement index
@@ -65,6 +76,10 @@ namespace coffee {
 	// main 스크린의 Wi-Fi 연결 정보 표현을 위한 lvgl 타이머
     // lvgl timer for displaying Wi-Fi connection information on the main screen
 	static lv_timer_t* main_wifi_timer = nullptr;
+
+    // debug 스크린의 debugTextArea에 디버깅 정보 표현을 위한 lvgl 타이머
+    // lvgl timer for displaying debugging information on the debugTextArea of the debug screen
+    static lv_timer_t* debug_textArea_timer = nullptr;
 
     // Wi-Fi RSSI 이미지 파일
     // Wi-Fi RSSI image files
@@ -79,20 +94,24 @@ namespace coffee {
     static lv_timer_t* wifi_info_timer = nullptr;
 
     // wifi 스크린의 wifiTextArea에 Wi-Fi 연결 정보 표현을 위한 lvgl 타이머
-    // lvgl timer for displaying Wi-Fi connection information on the wifiTextArea of the Wi-Fi screen
+    // lvgl timer for displaying Wi-Fi connection information on the wifiTextArea of the wifi screen
     static lv_timer_t* wifi_textArea_timer = nullptr;
 
-    // debug 스크린의 debugTextArea에 디버깅 정보 표현을 위한 lvgl 타이머
-    // lvgl timer for displaying debugging information on the debugTextArea of the debug screen
-    static lv_timer_t* debug_textArea_timer = nullptr;
+    // server 스크린의 MQTT 서버 연결 정보 표현을 위한 lvgl 타이머
+    // lvgl timer for displaying MQTT server connection information on the server screen
+    static lv_timer_t* server_info_timer = nullptr;
+
+    // server 스크린의 serverTextArea에 MQTT 서버 연결 정보 표현을 위한 lvgl 타이머
+    // lvgl timer for displaying MQTT server connection information on the serverTextArea of the server screen
+    static lv_timer_t* server_textArea_timer = nullptr;
 
 	static void main_ad_timer_cb(lv_timer_t* t) {
 		if (!ui_mainImage || !lv_obj_is_valid(ui_mainImage)) {
 			return;
 		}
 
-		ad_cnt = (ad_cnt + 1) % 3;
-		lv_img_set_src(ui_mainImage, ads[ad_cnt]);
+		ad_cnt = (ad_cnt + 1) % ads.size();
+		lv_img_set_src(ui_mainImage, ads[ad_cnt].c_str());
 	}
 
     static void main_wifi_timer_cb(lv_timer_t* t) {
@@ -108,6 +127,27 @@ namespace coffee {
             lv_label_set_text(ui_mainWiFiLabel, wifiLabel.c_str());
         } else {
             lv_label_set_text(ui_mainWiFiLabel, "Wi-Fi: Disconnected");
+        }
+    }
+
+    static void server_info_timer_cb(lv_timer_t* t) {
+        if (!ui_serverLabel || !lv_obj_is_valid(ui_serverLabel)) {
+			return;
+		}
+
+        if (lock_mtx(mqtt_mtx)) {
+            std::string server_info = std::string("Current Server: ") + mqtt_uri;
+            lv_label_set_text(ui_serverLabel, server_info.c_str());
+
+            unlock_mtx(mqtt_mtx);
+        }
+    }
+
+    static void server_textArea_timer_cb(lv_timer_t* t) {
+        char buf[COFFEE_MAX_STR_BUF];
+
+        while (queue_poll(serverTextArea_q, buf)) {
+            lv_textarea_add_text(ui_serverTextArea, buf);
         }
     }
 
@@ -160,7 +200,7 @@ extern "C" {
 		lv_img_set_src(ui_mainConfigImage, "S:/res/icon/main/config.bin");
 		lv_img_set_src(ui_mainStartImage, "S:/res/icon/main/start.bin");
 
-		lv_img_set_src(ui_mainImage, coffee::ads[0]);
+		lv_img_set_src(ui_mainImage, coffee::ads[0].c_str());
 
 		if (!coffee::main_ad_timer) {
 			coffee::main_ad_timer = lv_timer_create(coffee::main_ad_timer_cb, COFFEE_AD_TERM, nullptr);
@@ -325,21 +365,65 @@ extern "C" {
 	void server_screen_load(lv_event_t * e)
 	{
 		lv_img_set_src(ui_serverBackImage, "S:/res/icon/share/back.bin");
+
         lv_textarea_set_text(ui_serverAddressTextArea, "");
-        lv_textarea_set_text(ui_serverPortTextArea, "");
+        lv_textarea_set_text(ui_serverRegionTextArea, "");
+        lv_textarea_set_text(ui_serverStoreTextArea, "");
+
+        if (!coffee::server_info_timer) {
+            coffee::server_info_timer = lv_timer_create(coffee::server_info_timer_cb, 1000, nullptr);
+        }
+
+        if (!coffee::server_textArea_timer) {
+            coffee::server_textArea_timer = lv_timer_create(coffee::server_textArea_timer_cb, 100, nullptr);
+        }
 	}
 
 	// serverScreen 삭제 시 호출
     // called when serverScreen is deleted
 	void server_screen_unload(lv_event_t * e) {
-		// 추가 예정
+		if (coffee::server_info_timer) {
+            lv_timer_del(coffee::server_info_timer);
+
+            coffee::server_info_timer = nullptr;
+        }
+
+        if (coffee::server_textArea_timer) {
+            lv_timer_del(coffee::server_textArea_timer);
+
+            coffee::server_textArea_timer = nullptr;
+        }
 	}
 
     // serverScreen의 serverSetButton 클릭 시 호출
     // called when the serverSetButton on serverScreen is clicked
 	void server_set(lv_event_t * e)
 	{
-		// 추가 예정
+        const char* addr = lv_textarea_get_text(ui_serverAddressTextArea);
+		const char* region = lv_textarea_get_text(ui_serverRegionTextArea);
+        const char* store = lv_textarea_get_text(ui_serverStoreTextArea);
+
+        if (addr[0] == '\0' && region[0] == '\0' && store[0] == '\0') {
+            lv_textarea_add_text(ui_serverTextArea, "Invalid server config\n");
+
+            return;
+        }
+
+        if (region[0] == '\0') {
+            coffee::set_mqtt_prefix(coffee::mqtt_region, store);
+        } else if (store[0] == '\0') {
+            coffee::set_mqtt_prefix(region, coffee::mqtt_store);
+        } else {
+            coffee::set_mqtt_prefix(region, store);
+        }
+
+        if (addr[0] == '\0') {
+            lv_textarea_add_text(ui_serverTextArea, "MQTT topic updated!\n");
+            coffee::init_mqtt(coffee::mqtt_uri);
+        } else {
+            lv_textarea_add_text(ui_serverTextArea, "Server configurations updated!\n");
+            coffee::init_mqtt(addr);
+        }
 	}
 
     // firmwareScreen 로딩 시작 시 호출
@@ -430,4 +514,10 @@ extern "C" {
 
         coffee::debug2(firmware_version);
 	}
+
+    // debugScreen의 debugOnOffButton 클릭 시 호출
+    // called when the debugOnOffButton on debugScreen is clicked
+    void debug_toggle_dbg_overlay(lv_event_t * e) {
+        coffee::toggle_dbg_overlay();
+    }
 }

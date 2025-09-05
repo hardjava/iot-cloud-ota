@@ -1,4 +1,4 @@
-#include "coffee/config.hpp"
+#include "coffee/json_task.hpp"
 
 namespace coffee {
     /**
@@ -84,56 +84,121 @@ namespace coffee {
             return;
         }
 
-        if (!cJSON_IsTrue(cJSON_GetObjectItem(wifi_config, "auto_connect"))) {
-            ssid_out = "";
-            pw_out = "";
+        if (lock_mtx(json_mtx, portMAX_DELAY)) {
+            if (!cJSON_IsTrue(cJSON_GetObjectItem(wifi_config, "auto_connect"))) {
+                ssid_out = "";
+                pw_out = "";
+
+                unlock_mtx(json_mtx);
+
+                return;
+            }
+
+            cJSON* last_ssid = cJSON_GetObjectItem(wifi_config, "last_ssid");
+            if (!last_ssid) {
+                Serial.println("[coffee/config][error] unable to find ‘last_ssid’ object");
+
+                ssid_out = "";
+                pw_out = "";
+
+                unlock_mtx(json_mtx);
+
+                return;
+            } else if (!cJSON_IsString(last_ssid)) {
+                Serial.println("[coffee/config][error] invalid ‘last_ssid’");
+
+                ssid_out = "";
+                pw_out = "";
+
+                unlock_mtx(json_mtx);
+
+                return;
+            } else {
+                ssid_out = last_ssid->valuestring;
+            }
+
+            cJSON* last_password = cJSON_GetObjectItem(wifi_config, "last_password");
+            if (!last_password) {
+                Serial.println("[coffee/config][error] unable to find ‘last_password’ object");
+
+                ssid_out = "";
+                pw_out = "";
+
+                unlock_mtx(json_mtx);
+
+                return;
+            } else if (!cJSON_IsString(last_password)) {
+                Serial.println("[coffee/config][error] invalid ‘last_password’");
+
+                ssid_out = "";
+                pw_out = "";
+
+                unlock_mtx(json_mtx);
+
+                return;
+            } else {
+                pw_out = last_password->valuestring;
+            }
+
+            unlock_mtx(json_mtx);
+        }
+
+        return;
+    }
+
+    void get_last_server(std::string& addr_out) {
+        if (!config_root) {
+            Serial.println("[coffee/config][error] config_root has not been initialized");
+
+            addr_out = "";
 
             return;
         }
 
-        cJSON* last_ssid = cJSON_GetObjectItem(wifi_config, "last_ssid");
-        if (!last_ssid) {
-            Serial.println("[coffee/config][error] unable to find ‘last_ssid’ object");
+        if (lock_mtx(json_mtx, portMAX_DELAY)) {
+            if (!cJSON_IsTrue(cJSON_GetObjectItem(mqtt_config, "auto_connect"))) {
+                addr_out = "";
 
-            ssid_out = "";
-            pw_out = "";
+                unlock_mtx(json_mtx);
 
-            return;
-        } else if (!cJSON_IsString(last_ssid)) {
-            Serial.println("[coffee/config][error] invalid ‘last_ssid’");
+                return;
+            }
 
-            ssid_out = "";
-            pw_out = "";
+            cJSON* last_server = cJSON_GetObjectItem(mqtt_config, "last_server");
+            if (!last_server) {
+                Serial.println("[coffee/config][error] unable to find ‘last_server’ object");
 
-            return;
-        } else {
-            ssid_out = last_ssid->valuestring;
-        }
+                addr_out = "";
 
-        cJSON* last_password = cJSON_GetObjectItem(wifi_config, "last_password");
-        if (!last_password) {
-            Serial.println("[coffee/config][error] unable to find ‘last_password’ object");
+                unlock_mtx(json_mtx);
 
-            ssid_out = "";
-            pw_out = "";
+                return;
+            } else if (!cJSON_IsString(last_server)) {
+                Serial.println("[coffee/config][error] invalid ‘last_server’");
 
-            return;
-        } else if (!cJSON_IsString(last_password)) {
-            Serial.println("[coffee/config][error] invalid ‘last_password’");
+                addr_out = "";
 
-            ssid_out = "";
-            pw_out = "";
+                unlock_mtx(json_mtx);
 
-            return;
-        } else {
-            pw_out = last_password->valuestring;
+                return;
+            } else {
+                addr_out = last_server->valuestring;
+            }
+
+            unlock_mtx(json_mtx);
         }
 
         return;
     }
 
     void write_config(void) {
-        char* out_config = cJSON_Print(config_root);
+        char* out_config = nullptr;
+        if (lock_mtx(json_mtx, portMAX_DELAY)) {
+            out_config = cJSON_Print(config_root);
+
+            unlock_mtx(json_mtx);
+        }
+        
         if(!out_config) {
             Serial.println("[coffee/config][error] failed to allocate out_config");
 

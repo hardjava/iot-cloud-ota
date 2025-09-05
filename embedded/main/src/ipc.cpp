@@ -2,18 +2,25 @@
 
 namespace coffee {
 	/**
-	 * @brief  wifiTextArea에 표시될 텍스트를 전달하는 큐
-	 * 
-	 * 	       queue for delivering text to be displayed in wifiTextArea
-	 */
-	QueueHandle_t wifiTextArea_q;
-
-	/**
 	 * @brief  debugTextArea에 표시될 텍스트를 전달하는 큐
 	 * 
 	 * 	       queue for delivering text to be displayed in debugTextArea
 	 */
 	QueueHandle_t debugTextArea_q;
+	
+	/**
+	 * @brief  serverTextArea에 표시될 텍스트를 전달하는 큐
+	 * 
+	 * 	       queue for delivering text to be displayed in serverTextArea
+	 */
+	QueueHandle_t serverTextArea_q;
+	
+	/**
+	 * @brief  wifiTextArea에 표시될 텍스트를 전달하는 큐
+	 * 
+	 * 	       queue for delivering text to be displayed in wifiTextArea
+	 */
+	QueueHandle_t wifiTextArea_q;
 
 	/**
 	 * @brief 디버그 오버레이에 표시될 텍스트를 전달하는 큐
@@ -23,19 +30,23 @@ namespace coffee {
 	QueueHandle_t dbg_overlay_q;
 
 	bool init_ipc_queue(void) {
-        if (!wifiTextArea_q) {
-            wifiTextArea_q = xQueueCreate(COFFEE_QUEUE_SIZE, COFFEE_MAX_STR_BUF);
-        }
-
         if (!debugTextArea_q) {
             debugTextArea_q = xQueueCreate(COFFEE_QUEUE_SIZE, COFFEE_MAX_STR_BUF);
+        }
+		
+        if (!serverTextArea_q) {
+            serverTextArea_q = xQueueCreate(COFFEE_QUEUE_SIZE, COFFEE_MAX_STR_BUF);
+        }
+		
+        if (!wifiTextArea_q) {
+            wifiTextArea_q = xQueueCreate(COFFEE_QUEUE_SIZE, COFFEE_MAX_STR_BUF);
         }
 
         if (!dbg_overlay_q) {
             dbg_overlay_q = xQueueCreate(COFFEE_QUEUE_SIZE * 10, COFFEE_MAX_STR_BUF);
         }
 
-		if (!wifiTextArea_q || !debugTextArea_q || !dbg_overlay_q) {
+		if (!debugTextArea_q || !serverTextArea_q || !wifiTextArea_q || !dbg_overlay_q) {
 			Serial.println("[coffee/ipc][error] queue creation failed");
 
 			return false;

@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <Arduino.h>
 
 #include <coffee_drv/init.hpp>
@@ -7,6 +9,8 @@
 #include "coffee/config.hpp"
 #include "coffee/event_control.hpp"
 #include "coffee/ipc.hpp"
+#include "coffee/json_task.hpp"
+#include "coffee/mqtt_task.hpp"
 #include "coffee/ui_task.hpp"
 
 extern "C" void app_main(void) {
@@ -25,16 +29,29 @@ extern "C" void app_main(void) {
 
     coffee::init_mtx();
 
-    coffee::init_ui_task();
+    if (!coffee::init_ui_task()) {
+        return;
+    }
 
     coffee::init_dbg_overlay();
 
     if (coffee::wifi_config) {
         Serial.println("[coffee/main][info] attempting to restore previous network connection...");
         std::string last_ssid = "", last_password = "";
+
         coffee::get_last_wifi(last_ssid, last_password);
         if (last_ssid != "") {
             coffee_drv::init_wifi_sta(last_ssid, last_password);
+        }
+    }
+
+    if (coffee::mqtt_config) {
+        Serial.println("[coffee/main][info] attempting to restore previous MQTT connection...");
+        std::string last_addr = "";
+        
+        coffee::get_last_server(last_addr);
+        if (last_addr != "") {
+            coffee::init_mqtt(last_addr);
         }
     }
 }

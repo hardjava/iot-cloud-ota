@@ -32,6 +32,7 @@ void debug_screen_load(lv_event_t * e);
 void debug_screen_unload(lv_event_t * e);
 void debug_function1(lv_event_t * e);
 void debug_function2(lv_event_t * e);
+void debug_toggle_dbg_overlay(lv_event_t * e);
 
 #ifdef __cplusplus
 } /*extern "C"*/

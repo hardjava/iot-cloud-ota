@@ -14,9 +14,11 @@ lv_obj_t * ui_debugCmdTextArea = NULL;
 lv_obj_t * ui_debugFunction1Button = NULL;
 lv_obj_t * ui_debugFunction1Label = NULL;
 lv_obj_t * ui_debugFunction2Button = NULL;
-lv_obj_t * ui_wifiConnectLabel3 = NULL;
+lv_obj_t * ui_debugFunction2Label = NULL;
 lv_obj_t * ui_debugBackButton = NULL;
 lv_obj_t * ui_debugBackImage = NULL;
+lv_obj_t * ui_debugOnOffButton = NULL;
+lv_obj_t * ui_debugOnOffLabel = NULL;
 lv_obj_t * ui_debugKeyboard = NULL;
 // event funtions
 void ui_event_debugScreen(lv_event_t * e)
@@ -69,6 +71,15 @@ void ui_event_debugBackButton(lv_event_t * e)
     if(event_code == LV_EVENT_RELEASED) {
         _ui_screen_change(&ui_firmwareScreen, LV_SCR_LOAD_ANIM_OVER_BOTTOM, 500, 0, &ui_firmwareScreen_screen_init);
         _ui_screen_delete(&ui_debugScreen);
+    }
+}
+
+void ui_event_debugOnOffButton(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+
+    if(event_code == LV_EVENT_RELEASED) {
+        debug_toggle_dbg_overlay(e);
     }
 }
 
@@ -163,14 +174,14 @@ void ui_debugScreen_screen_init(void)
     lv_obj_set_style_shadow_width(ui_debugFunction2Button, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_spread(ui_debugFunction2Button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_wifiConnectLabel3 = lv_label_create(ui_debugFunction2Button);
-    lv_obj_set_width(ui_wifiConnectLabel3, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_wifiConnectLabel3, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_align(ui_wifiConnectLabel3, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_wifiConnectLabel3, "FUNCTION 2");
-    lv_obj_set_style_text_color(ui_wifiConnectLabel3, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui_wifiConnectLabel3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_wifiConnectLabel3, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_debugFunction2Label = lv_label_create(ui_debugFunction2Button);
+    lv_obj_set_width(ui_debugFunction2Label, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_debugFunction2Label, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_debugFunction2Label, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_debugFunction2Label, "FUNCTION 2");
+    lv_obj_set_style_text_color(ui_debugFunction2Label, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_debugFunction2Label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_debugFunction2Label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_debugBackButton = lv_btn_create(ui_debugScreen);
     lv_obj_set_width(ui_debugBackButton, 60);
@@ -194,6 +205,29 @@ void ui_debugScreen_screen_init(void)
     lv_obj_add_flag(ui_debugBackImage, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_debugBackImage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
+    ui_debugOnOffButton = lv_btn_create(ui_debugScreen);
+    lv_obj_set_width(ui_debugOnOffButton, 250);
+    lv_obj_set_height(ui_debugOnOffButton, 26);
+    lv_obj_set_x(ui_debugOnOffButton, 195);
+    lv_obj_set_y(ui_debugOnOffButton, 150);
+    lv_obj_set_align(ui_debugOnOffButton, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_debugOnOffButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+    lv_obj_clear_flag(ui_debugOnOffButton, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_bg_color(ui_debugOnOffButton, lv_color_hex(0xE8E8E8), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_debugOnOffButton, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_color(ui_debugOnOffButton, lv_color_hex(0x808080), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_opa(ui_debugOnOffButton, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui_debugOnOffButton, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_spread(ui_debugOnOffButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_debugOnOffLabel = lv_label_create(ui_debugOnOffButton);
+    lv_obj_set_width(ui_debugOnOffLabel, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_debugOnOffLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_debugOnOffLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_debugOnOffLabel, "Turn on / off debug overlay");
+    lv_obj_set_style_text_color(ui_debugOnOffLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_debugOnOffLabel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     ui_debugKeyboard = lv_keyboard_create(ui_debugScreen);
     lv_obj_set_width(ui_debugKeyboard, 800);
     lv_obj_set_height(ui_debugKeyboard, 240);
@@ -205,6 +239,7 @@ void ui_debugScreen_screen_init(void)
     lv_obj_add_event_cb(ui_debugFunction1Button, ui_event_debugFunction1Button, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_debugFunction2Button, ui_event_debugFunction2Button, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_debugBackButton, ui_event_debugBackButton, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_debugOnOffButton, ui_event_debugOnOffButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_debugScreen, ui_event_debugScreen, LV_EVENT_ALL, NULL);
 
 }
@@ -223,9 +258,11 @@ void ui_debugScreen_screen_destroy(void)
     ui_debugFunction1Button = NULL;
     ui_debugFunction1Label = NULL;
     ui_debugFunction2Button = NULL;
-    ui_wifiConnectLabel3 = NULL;
+    ui_debugFunction2Label = NULL;
     ui_debugBackButton = NULL;
     ui_debugBackImage = NULL;
+    ui_debugOnOffButton = NULL;
+    ui_debugOnOffLabel = NULL;
     ui_debugKeyboard = NULL;
 
 }
