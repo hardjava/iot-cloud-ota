@@ -3,10 +3,7 @@ package com.coffee_is_essential.iot_cloud_ota.service;
 import com.coffee_is_essential.iot_cloud_ota.entity.*;
 import com.coffee_is_essential.iot_cloud_ota.enums.DeploymentStatus;
 import com.coffee_is_essential.iot_cloud_ota.enums.OverallStatus;
-import com.coffee_is_essential.iot_cloud_ota.repository.FirmwareDeploymentDeviceRepository;
-import com.coffee_is_essential.iot_cloud_ota.repository.FirmwareDeploymentRepository;
-import com.coffee_is_essential.iot_cloud_ota.repository.OverallDeploymentStatusRepository;
-import com.coffee_is_essential.iot_cloud_ota.repository.QuestDbRepository;
+import com.coffee_is_essential.iot_cloud_ota.repository.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -40,6 +37,7 @@ public class DeployJudgeScheduler {
     private final DeploymentRedisService deploymentRedisService;
     private final EntityManager em;
     private final QuestDbRepository questDbRepository;
+    private final DeviceService deviceService;
 
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final ConcurrentHashMap<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
@@ -134,6 +132,12 @@ public class DeployJudgeScheduler {
 
         if (!completedEvents.isEmpty()) {
             processCompletedEvents(commandId, completedEvents, firmwareDeployment);
+            String type = commandId.split("-")[0];
+            if ("AD".equals(type)) {
+                deviceService.updateDeviceAds(commandId, completedEvents);
+            } else if ("FW".equals(type)) {
+                deviceService.updateDeviceFirmware(commandId, completedEvents);
+            }
         }
 
         Long size = srt.opsForSet().size(commandId);
@@ -196,7 +200,6 @@ public class DeployJudgeScheduler {
         firmwareDeploymentDeviceRepository.saveAll(list);
         deploymentRedisService.deleteDevices(commandId, completedEvents);
     }
-    
 
     /**
      * 이벤트 상태가 완료 상태(SUCCESS, FAILED, CANCELLED, TIMEOUT)인지 여부를 판별한다.
