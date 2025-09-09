@@ -91,5 +91,5 @@ func (m *MQTTClient) SubscribeAllTopics() {
 	m.subscribe("v1/+/update/cancel/ack", parseDownloadCancelAck, "[CANCEL ACK]")
 	m.subscribeSystemStatus("v1/+/status/system", parseSystemStatus, "[SYSTEM STATUS]")
 	m.subscribeErrorLog("v1/+/status/error_log", parseErrorLog, "[ERROR LOG]")
-	m.subscribeSalesData("v1/+/sales/data", parseSalesItem, "[SALES ITEM]")
+	m.subscribeSalesData("v1/+/sales/data", parseSalesItem, "[SALES DATA]")
 }
