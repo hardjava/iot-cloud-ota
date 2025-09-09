@@ -113,8 +113,31 @@ func (c *DBClient) StartErrorLogConsumer() {
 	}
 }
 
+func (c *DBClient) StartSalesItemConsumer() {
+	for event := range SalesDataInsertChan {
+		ctx := context.TODO()
+		err := c.sender.Table("sales_data").
+			Int64Column("device_id", event.DeviceId).
+			StringColumn("type", event.SalesData.Type).
+			StringColumn("sub_type", event.SalesData.SubType).
+			At(ctx, event.SalesData.Timestamp.UTC())
+
+		if err != nil {
+			log.Printf("[ERROR] QuestDB Insert 실패: %v", err)
+			continue
+		}
+		if err := c.sender.Flush(ctx); err != nil {
+			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+		} else {
+			log.Printf("[DB] Insert 성공 - device_id: %d, Sales Type: %s", event.DeviceId, event.SalesData.Type)
+		}
+	}
+}
+
+// StartAllConsumer는 모든 이벤트 소비자(consumer)를 백그라운드에서 시작합니다.
 func (c *DBClient) StartAllConsumer() {
 	go c.StartEventConsumer()
 	go c.StartSystemStatusConsumer()
 	go c.StartErrorLogConsumer()
+	go c.StartSalesItemConsumer()
 }
