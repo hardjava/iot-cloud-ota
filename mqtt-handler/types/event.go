@@ -12,7 +12,7 @@ type DownloadEvent struct {
 	DownloadBytes    int64
 	SpeedKbps        float64
 	ChecksumVerified bool
-	DownloadSeconds  int64
+	DownloadMs       int64
 	Timestamp        time.Time
 }
 
@@ -27,7 +27,7 @@ type DownloadResult struct {
 	Status           string    `json:"status"`
 	Message          string    `json:"message"`
 	ChecksumVerified bool      `json:"checksum_verified"`
-	DownloadSeconds  int64     `json:"download_seconds"`
+	DownloadMs       int64     `json:"download_ms"`
 	Timestamp        time.Time `json:"timestamp"`
 }
 

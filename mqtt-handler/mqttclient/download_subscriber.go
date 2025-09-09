@@ -68,7 +68,7 @@ func parseDownloadResult(msg mqtt.Message) (*types.DownloadEvent, error) {
 	}
 
 	return buildDownloadEvent(msg.Topic(), result.CommandID, result.Message, result.Status,
-		0, 0, 0, 0, result.ChecksumVerified, result.DownloadSeconds, result.Timestamp), nil
+		0, 0, 0, 0, result.ChecksumVerified, result.DownloadMs, result.Timestamp), nil
 }
 
 // 다운로드 취소 응답 메시지 처리
@@ -98,7 +98,7 @@ func buildDownloadEvent(topic, commandID, message, status string, progress int64
 		DownloadBytes:    downloadBytes,
 		SpeedKbps:        speedKbps,
 		ChecksumVerified: verified,
-		DownloadSeconds:  downloadTime,
+		DownloadMs:       downloadTime,
 		Timestamp:        timestamp,
 	}
 }

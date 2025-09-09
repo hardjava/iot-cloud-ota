@@ -85,7 +85,7 @@ public class DownloadEventsJdbcRepository {
             e.setDownloadBytes(rs.getLong("download_bytes"));
             e.setSpeedKbps(rs.getDouble("speed_kbps"));
             e.setChecksumVerified(rs.getBoolean("checksum_verified"));
-            e.setDownloadTime(rs.getLong("download_seconds"));
+            e.setDownloadTime(rs.getLong("download_ms"));
             e.setTimestamp(rs.getTimestamp("timestamp"));
 
             return e;
