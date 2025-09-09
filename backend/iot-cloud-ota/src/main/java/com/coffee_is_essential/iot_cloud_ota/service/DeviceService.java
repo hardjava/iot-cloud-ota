@@ -47,16 +47,25 @@ public class DeviceService {
     }
 
     /**
-     * 디바이스 요약 정보 목록을 조회합니다.
-     * 디바이스 ID, 디바이스 이름, 리전 이름, 그룹 이름, 활성 상태을 포함한 요약 데이터를 DTO 형태로 반환합니다.
+     * 모든 디바이스의 요약 정보를 조회합니다.
+     * 각 디바이스에 대해 최신 시스템 상태를 확인하여 활성 상태를 판단합니다.
      *
-     * @return DeviceSummaryResponseDto 리스트 (deviceID, deviceName, regionName, groupName, isActive)
+     * @return 디바이스 요약 정보 리스트
      */
     public List<DeviceSummaryResponseDto> findDeviceSummary() {
 
-        return deviceJpaRepository.findDeviceSummary()
-                .stream()
-                .map(DeviceSummaryResponseDto::from)
+        return deviceJpaRepository.findDeviceSummary().stream()
+                .map(ds -> {
+                    SystemStatus status = deviceStatusJdbcRepository.findLatestByDeviceId(ds.getDeviceId());
+                    boolean isActive = status != null && status.getTimestamp().isAfter(OffsetDateTime.now().minusMinutes(5));
+                    return new DeviceSummaryResponseDto(
+                            ds.getDeviceId(),
+                            ds.getDeviceName(),
+                            ds.getRegionName(),
+                            ds.getGroupName(),
+                            isActive
+                    );
+                })
                 .toList();
     }
 
@@ -185,6 +194,8 @@ public class DeviceService {
                 device.getCreatedAt(),
                 device.getModifiedAt(),
                 status != null ? status.getTimestamp() : null,
+                status != null && status.getTimestamp().isAfter(OffsetDateTime.now().minusMinutes(5)),
+
                 DeviceDetailRegionDto.from(device.getRegion()),
                 DeviceDetailDivisionDto.from(device.getDivision()),
                 deviceFirmware.map(FirmwareResponseDto::from).orElse(null),

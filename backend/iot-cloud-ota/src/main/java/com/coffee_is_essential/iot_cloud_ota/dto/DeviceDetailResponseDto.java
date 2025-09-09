@@ -9,6 +9,7 @@ public record DeviceDetailResponseDto(
         OffsetDateTime createdAt,
         OffsetDateTime modifiedAt,
         OffsetDateTime lastActiveAt,
+        boolean isActive,
         DeviceDetailRegionDto region,
         DeviceDetailDivisionDto group,
         FirmwareResponseDto firmware,
