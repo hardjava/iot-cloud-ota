@@ -76,7 +76,7 @@ func (c *DBClient) StartSystemStatusConsumer() {
 		// 4. firmware_status 저장
 		if err := c.sender.Table("firmware_status").
 			Int64Column("device_id", event.DeviceId).
-			Int64Column("firmware_id", event.FirmwareId).
+			StringColumn("firmware_version", event.FirmwareVersion).
 			At(ctx, event.Timestamp.UTC()); err != nil {
 			log.Printf("[ERROR] firmware_status Insert 실패: %v", err)
 		}
