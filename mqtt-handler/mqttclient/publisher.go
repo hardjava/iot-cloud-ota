@@ -48,7 +48,7 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 				DownloadBytes:    0,
 				SpeedKbps:        0,
 				ChecksumVerified: false,
-				DownloadSeconds:  0,
+				DownloadMs:       0,
 			}
 
 			repository.DownloadInsertChan <- event
@@ -99,7 +99,7 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 				DownloadBytes:    0,
 				SpeedKbps:        0,
 				ChecksumVerified: false,
-				DownloadSeconds:  0,
+				DownloadMs:       0,
 			}
 
 			repository.DownloadInsertChan <- event
@@ -157,7 +157,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 				DownloadBytes:    0,
 				SpeedKbps:        0,
 				ChecksumVerified: false,
-				DownloadSeconds:  0,
+				DownloadMs:       0,
 			}
 
 			repository.DownloadInsertChan <- event
