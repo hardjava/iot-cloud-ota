@@ -3,11 +3,11 @@ package types
 import "time"
 
 type SystemStatus struct {
-	FirmwareId     int64            `json:"firmware_id"`
-	Advertisements []Advertisements `json:"advertisements"`
-	System         System           `json:"system"`
-	Network        Network          `json:"network"`
-	Timestamp      time.Time        `json:"timestamp"`
+	FirmwareVersion string           `json:"firmware_version"`
+	Advertisements  []Advertisements `json:"advertisements"`
+	System          System           `json:"system"`
+	Network         Network          `json:"network"`
+	Timestamp       time.Time        `json:"timestamp"`
 }
 
 type Advertisements struct {
@@ -34,12 +34,12 @@ type Network struct {
 }
 
 type SystemStatusEvent struct {
-	DeviceId       int64
-	FirmwareId     int64
-	Advertisements []Advertisements
-	System         System
-	Network        Network
-	Timestamp      time.Time
+	DeviceId        int64
+	FirmwareVersion string
+	Advertisements  []Advertisements
+	System          System
+	Network         Network
+	Timestamp       time.Time
 }
 
 type ErrorLog struct {

@@ -50,11 +50,11 @@ func buildSystemStatusEvent(topic string, status types.SystemStatus) *types.Syst
 	deviceId, _ := strconv.ParseInt(topicParts[1], 10, 64)
 
 	return &types.SystemStatusEvent{
-		DeviceId:       deviceId,
-		FirmwareId:     status.FirmwareId,
-		Advertisements: status.Advertisements,
-		System:         status.System,
-		Network:        status.Network,
-		Timestamp:      status.Timestamp,
+		DeviceId:        deviceId,
+		FirmwareVersion: status.FirmwareVersion,
+		Advertisements:  status.Advertisements,
+		System:          status.System,
+		Network:         status.Network,
+		Timestamp:       status.Timestamp,
 	}
 }
