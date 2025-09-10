@@ -10,12 +10,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 @AllArgsConstructor
@@ -30,6 +34,8 @@ public class DeviceService {
     private final DeviceFirmwareJpaRepository deviceFirmwareJpaRepository;
     private final DeviceAdsJpaRepository deviceAdsJpaRepository;
     private final CloudFrontSignedUrlService cloudFrontSignedUrlService;
+    private static int TIMEOUT = 5;
+    private final StringRedisTemplate srt;
 
     /**
      * 새로운 디바이스를 생성하고 저장합니다.
@@ -210,5 +216,48 @@ public class DeviceService {
                         )
                         .toList()
         );
+    }
+
+    /**
+     * 디바이스 등록 요청을 처리합니다.
+     * 요청된 리전과 그룹에 대한 유효성을 검증하고, 6자리 숫자로 구성된 디바이스 코드를 생성합니다.
+     * 생성된 디바이스 코드는 Redis에 저장되며, 만료 시간은 5분으로 설정됩니다.
+     * 최종적으로 디바이스 코드와 만료 시간을 포함한 응답 DTO를 반환합니다.
+     *
+     * @param requestDto 디바이스 등록 요청 DTO
+     * @return DeviceRegisterResponseDto (생성된 디바이스 코드와 만료 시간)
+     */
+    @Transactional
+    public DeviceRegisterResponseDto registerDevice(DeviceRegisterRequestDto requestDto) {
+        Region region = regionJpaRepository.findByIdOrElseThrow(requestDto.regionId());
+        Division group = divisionJpaRepository.findByIdOrElseThrow(requestDto.groupId());
+        String code = generateDeviceCode();
+        String expiresAt = Instant.now().plus(Duration.ofMinutes(TIMEOUT)).toString();
+        saveRedisDeviceCode(code, region.getId(), group.getId());
+        return new DeviceRegisterResponseDto(code, expiresAt);
+    }
+
+    private void saveRedisDeviceCode(String code, Long regionId, Long groupId) {
+        String redisKey = "device:register:" + code;
+        String redisValue = String.format("{\"regionId\": %d, \"groupId\": %d}",
+                regionId, groupId);
+
+        srt.opsForValue().set(redisKey, redisValue, Duration.ofMinutes(TIMEOUT));
+    }
+
+    /**
+     * 6자리 숫자로 구성된 디바이스 코드를 생성합니다.
+     *
+     * @return 생성된 디바이스 코드
+     */
+    private String generateDeviceCode() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < 6; i++) {
+            sb.append(random.nextInt(10)); // 0~9
+        }
+
+        return sb.toString();
     }
 }

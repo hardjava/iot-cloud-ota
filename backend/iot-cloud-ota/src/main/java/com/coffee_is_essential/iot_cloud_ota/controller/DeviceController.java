@@ -1,10 +1,9 @@
 package com.coffee_is_essential.iot_cloud_ota.controller;
 
 import com.coffee_is_essential.iot_cloud_ota.domain.PaginationInfo;
-import com.coffee_is_essential.iot_cloud_ota.dto.DeviceDetailResponseDto;
-import com.coffee_is_essential.iot_cloud_ota.dto.DeviceListResponseDto;
-import com.coffee_is_essential.iot_cloud_ota.dto.DeviceSummaryResponseDto;
+import com.coffee_is_essential.iot_cloud_ota.dto.*;
 import com.coffee_is_essential.iot_cloud_ota.service.DeviceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,6 +67,19 @@ public class DeviceController {
     @GetMapping("{id}")
     public ResponseEntity<DeviceDetailResponseDto> findDetailByDeviceId(@PathVariable Long id) {
         DeviceDetailResponseDto responseDto = deviceService.findDetailByDeviceId(id);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
+    /**
+     * 새로운 디바이스를 등록합니다.
+     *
+     * @param requestDto 디바이스 등록에 필요한 정보를 담은 DeviceRegisterRequestDto
+     * @return 등록된 디바이스의 정보를 담은 DeviceRegisterResponseDto와 HTTP 200 응답
+     */
+    @PostMapping
+    public ResponseEntity<DeviceRegisterResponseDto> registerDevice(@Valid @RequestBody DeviceRegisterRequestDto requestDto) {
+        DeviceRegisterResponseDto responseDto = deviceService.registerDevice(requestDto);
 
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
