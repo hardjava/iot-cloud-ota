@@ -78,9 +78,18 @@ public class DeviceController {
      * @return 등록된 디바이스의 정보를 담은 DeviceRegisterResponseDto와 HTTP 200 응답
      */
     @PostMapping
-    public ResponseEntity<DeviceRegisterResponseDto> registerDevice(@Valid @RequestBody DeviceRegisterRequestDto requestDto) {
-        DeviceRegisterResponseDto responseDto = deviceService.registerDevice(requestDto);
+    public ResponseEntity<GenerateRegistrationCodeResponseDto> generateRegisterCode(@Valid @RequestBody GenerateRegistrationCodeRequestDto requestDto) {
+        GenerateRegistrationCodeResponseDto responseDto = deviceService.generateCode(requestDto);
 
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<DeviceRegisterResponseDto> registerDevice(@Valid @RequestBody DeviceRegisterRequestDto requestDto) {
+        System.out.println(requestDto.deviceId());
+        System.out.println(requestDto.deviceName());
+        System.out.println(requestDto.AuthKey());
+        DeviceRegisterResponseDto responseDto = deviceService.registerDevice(requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 }
