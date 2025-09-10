@@ -87,6 +87,7 @@ func PrintDownloadAdsRequestLog(req *types.AdsDeployRequest) {
 		log.Printf("    Timeout: %d minutes\n", content.SignedUrl.Timeout)
 		log.Printf("    File Info - ID: %d, Hash: %s, Size: %d bytes\n",
 			content.FileInfo.Id, content.FileInfo.FileHash, content.FileInfo.Size)
+		log.Printf("	Total Size: %d bytes\n", req.TotalSize)
 	}
 	for _, device := range req.Devices {
 		log.Printf("Device ID: %d\n", device.DeviceId)

@@ -6,6 +6,7 @@ type AdsDeployRequest struct {
 	CommandId string      `json:"command_id"`
 	Contents  []Content   `json:"contents"`
 	Devices   []DeviceIds `json:"devices"`
+	TotalSize int64       `json:"totalSize"`
 	Timestamp time.Time   `json:"timestamp"`
 }
 
@@ -33,4 +34,5 @@ type AdsDownloadCommand struct {
 	CommandID string    `json:"command_id"`
 	Contents  []Content `json:"contents"`
 	Timestamp time.Time `json:"timestamp"`
+	TotalSize int64     `json:"total_size"`
 }
