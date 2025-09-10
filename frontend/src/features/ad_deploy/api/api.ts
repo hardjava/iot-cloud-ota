@@ -18,9 +18,9 @@ import { deviceApiService } from "../../../entities/device/api/api";
 export interface AdDeployRequest {
   adIds: number[];
   deploymentType: DeploymentType;
-  regions?: Region[];
-  groups?: Group[];
-  devices?: Device[];
+  regions?: number[];
+  groups?: number[];
+  devices?: number[];
 }
 
 /**
@@ -28,7 +28,7 @@ export interface AdDeployRequest {
  * @param {AdDeployRequest} request - 배포 요청 데이터
  */
 export const deployAds = async (request: AdDeployRequest) => {
-  const response = await apiClient.post("/ad-deployments", request);
+  const response = await apiClient.post("/api/ads/deployment", request);
   return response.data;
 };
 
