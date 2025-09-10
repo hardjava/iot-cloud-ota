@@ -84,12 +84,16 @@ public class DeviceController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    /**
+     * 디바이스 등록 코드를 사용하여 디바이스를 등록합니다.
+     *
+     * @param requestDto 디바이스 등록에 필요한 정보를 담은 DeviceRegisterRequestDto
+     * @return 등록된 디바이스의 정보를 담은 DeviceRegisterResponseDto와 HTTP 200 응답
+     */
     @PostMapping("/register")
     public ResponseEntity<DeviceRegisterResponseDto> registerDevice(@Valid @RequestBody DeviceRegisterRequestDto requestDto) {
-        System.out.println(requestDto.deviceId());
-        System.out.println(requestDto.deviceName());
-        System.out.println(requestDto.AuthKey());
         DeviceRegisterResponseDto responseDto = deviceService.registerDevice(requestDto);
+
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 }

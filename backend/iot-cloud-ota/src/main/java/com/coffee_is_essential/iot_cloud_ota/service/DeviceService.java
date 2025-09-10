@@ -11,10 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -258,13 +256,11 @@ public class DeviceService {
 
     /**
      * 디바이스 등록 요청을 처리합니다.
-     * 요청된 인증 키를 기반으로 Redis에서 임시로 저장된 디바이스 정보를 조회하고,
-     * 해당 정보를 사용하여 새로운 디바이스를 데이터베이스에 저장합니다.
-     * 인증 키가 유효하지 않거나 만료된 경우 예외를 발생시킵니다.
-     * 최종적으로 등록 성공 메시지와 현재 시간을 포함한 응답 DTO를 반환합니다.
+     * 요청된 인증 키를 Redis에서 조회하여 유효성을 검증하고, 해당 정보에 기반하여 디바이스를 저장합니다.
+     * 인증 키가 유효하지 않은 경우 "AUTH_FAILED" 상태를 반환하며, 유효한 경우 "OK" 상태와 함께 현재 시간을 반환합니다.
      *
      * @param requestDto 디바이스 등록 요청 DTO
-     * @return DeviceRegisterResponseDto (등록 성공 메시지와 현재 시간)
+     * @return DeviceRegisterResponseDto (등록 상태와 현재 시간)
      */
     @Transactional
     public DeviceRegisterResponseDto registerDevice(DeviceRegisterRequestDto requestDto) {
@@ -272,7 +268,7 @@ public class DeviceService {
         String redisValue = srt.opsForValue().get(redisKey);
 
         if (redisValue == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 디바이스 코드이거나, 코드가 만료되었습니다.");
+            return new DeviceRegisterResponseDto("AUTH_FAILED", OffsetDateTime.now());
         }
 
         Long regionId = Long.valueOf(redisValue.replaceAll(".*\"regionId\": (\\d+),.*", "$1"));

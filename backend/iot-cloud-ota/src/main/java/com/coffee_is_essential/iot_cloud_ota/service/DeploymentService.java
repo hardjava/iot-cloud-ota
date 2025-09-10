@@ -128,6 +128,7 @@ public class DeploymentService {
     @Transactional
     public AdsDeploymentDto deployAds(AdsDeploymentRequestDto requestDto) {
         String url = mqttHandlerBaseUrl + "/api/advertisements/deployment";
+        String commandId = "AD-" + UUID.randomUUID().toString();
         List<Long> adIds = requestDto.adIds();
 
         if (requestDto.devices().isEmpty() && requestDto.groups().isEmpty() && requestDto.regions().isEmpty()) {
@@ -147,25 +148,28 @@ public class DeploymentService {
                 .atZone(ZoneId.of("UTC"))
                 .toOffsetDateTime();
 
-        AdsDeploymentDto deploymentDto = new AdsDeploymentDto(
-                "AD-" + UUID.randomUUID().toString(),
-                contents,
-                devices.stream().map(DeployTargetDeviceInfo::from).toList(),
-                OffsetDateTime.now()
-        );
-
-        FirmwareDeployment firmwareDeployment = new FirmwareDeployment(deploymentDto.commandId(), requestDto.deploymentType(), OffsetDateTime.now(), expiresAtUtc);
+        FirmwareDeployment firmwareDeployment = new FirmwareDeployment(commandId, requestDto.deploymentType(), OffsetDateTime.now(), expiresAtUtc);
         firmwareDeploymentRepository.save(firmwareDeployment);
         overallDeploymentStatusRepository.save(new OverallDeploymentStatus(firmwareDeployment, OverallStatus.IN_PROGRESS));
 
+        Long totalSize = 0L;
         for (AdsMetadata adsMetadata : adsMetadataList) {
             String signedUrl = cloudFrontSignedUrlService.generateSignedUrl(adsMetadata.getBinaryS3Path(), expiresAt);
             contents.add(new DeploymentContent(
                     new SignedUrlInfo(signedUrl, TIMEOUT),
                     new FileInfo(adsMetadata.getId(), adsMetadata.getFileHash(), adsMetadata.getFileSize())
             ));
+            totalSize += adsMetadata.getFileSize();
             adsDeploymentJpaRepository.save(new AdsDeployment(firmwareDeployment, adsMetadata));
         }
+
+        AdsDeploymentDto deploymentDto = new AdsDeploymentDto(
+                commandId,
+                contents,
+                devices.stream().map(DeployTargetDeviceInfo::from).toList(),
+                totalSize,
+                OffsetDateTime.now()
+        );
 
         List<DeployTargetDeviceInfo> deviceInfos = devices
                 .stream()
