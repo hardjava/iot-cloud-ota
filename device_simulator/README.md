@@ -227,3 +227,43 @@ python main.py
   "timestamp": "2025-07-03T10:33:45Z"
 }
 ```
+
+## MQTT 통신 프로토콜 - 기기 상태 보고
+
+디바이스는 다음 MQTT 토픽과 메시지 형식을 사용하여 서버에 상태를 보고합니다.
+10초 간격으로 기기의 상태를 수집하여 서버에 보고합니다.
+
+### 1. 상태 보고 (디바이스 -> 서버)
+
+- **토픽**: `v1/{device_id}/status/system`
+- **페이로드 (JSON)**:
+
+```json
+{
+  "firmware_version": "0.0.0",
+  "advertisements": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    }
+  ],
+  "system": {
+    "cpu_usage": {
+      "core_0": 24.5, // %
+      "core_1": 45.9 // %
+    },
+    "memory_usage": 67.8, // %
+    "storage_usage": 23.1, // %
+    "uptime": 3612 // s(초)
+  },
+  "network": {
+    "connection_type": "wifi",
+    "signal_strength": -45, // RSSI
+    "local_ip": "192.168.1.100",
+    "gateway_ip": "192.168.1.1"
+  },
+  "timestamp": "2025-07-03T10:30:45Z"
+}
+```

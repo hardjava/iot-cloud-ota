@@ -5,30 +5,40 @@ import logging
 import threading
 import time
 from datetime import datetime, timezone
+from typing import List
 
 import constants
 import http_client as http
 import mqtt_client as mqtt
 from constants import RequestStatus, ResultStatus
+from metrics_collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class FirmwareDownloadRequest:
-    """펌웨어 다운로드 요청 메시지 스키마 (Subscribe)"""
+class AdContent:
+    """광고 콘텐츠 정보를 담는 데이터 클래스"""
 
-    command_id: str
     signed_url: str
     checksum: str
     size: int
     timeout: int
+    file_id: int
+
+
+@dataclasses.dataclass
+class AdvertisementDownloadRequest:
+    """광고 다운로드 요청 메시지 스키마 (Subscribe)"""
+
+    command_id: str
+    contents: List[AdContent]
     timestamp: str
 
 
 @dataclasses.dataclass
-class FirmwareDownloadAck:
-    """펌웨어 다운로드 요청 ACK 메시지 스키마 (Publish)"""
+class AdvertisementDownloadAck:
+    """광고 다운로드 요청 ACK 메시지 스키마 (Publish)"""
 
     command_id: str
     status: str
@@ -40,8 +50,8 @@ class FirmwareDownloadAck:
 
 
 @dataclasses.dataclass
-class FirmwareDownloadProgress:
-    """펌웨어 다운로드 진행 상태 메시지 스키마 (Publish)"""
+class AdvertisementDownloadProgress:
+    """광고 다운로드 진행 상태 메시지 스키마 (Publish)"""
 
     command_id: str
     progress: int
@@ -56,8 +66,8 @@ class FirmwareDownloadProgress:
 
 
 @dataclasses.dataclass
-class FirmwareDownloadResult:
-    """펌웨어 다운로드 결과 메시지 스키마 (Publish)"""
+class AdvertisementDownloadResult:
+    """광고 다운로드 결과 메시지 스키마 (Publish)"""
 
     command_id: str
     status: str
@@ -71,72 +81,80 @@ class FirmwareDownloadResult:
     )
 
 
-class FirmwareManager:
-    """펌웨어 다운로드 및 업데이트 프로세스의 전체 로직을 관리하는 클래스."""
+class AdvertisementManager:
+    """광고 다운로드 및 업데이트 프로세스의 전체 로직을 관리하는 클래스."""
 
     def __init__(
         self,
         device_id: str,
         mqtt_client: mqtt.MqttClient,
         http_client: http.HttpClient,
+        metrics_collector: MetricsCollector,
     ):
-        """FirmwareManager를 초기화합니다.
+        """AdvertisementManager를 초기화합니다.
 
         Args:
             device_id: 시뮬레이션할 디바이스의 고유 ID.
             mqtt_client: MQTT 통신을 위한 클라이언트 인스턴스.
             http_client: 파일 다운로드를 위한 클라이언트 인스턴스.
+            metrics_collector: 메트릭 수집기 인스턴스.
         """
         self._device_id = device_id
         self._mqtt_client = mqtt_client
         self._http_client = http_client
+        self._metrics_collector = metrics_collector
         self._download_thread = None
-        logger.info("FirmwareManager has been initialized successfully.")
+        logger.info("AdvertisementManager has been initialized successfully.")
 
     def handle_download_request(self, topic: str, payload: bytes) -> None:
-        """펌웨어 다운로드 요청 MQTT 메시지를 처리하는 콜백 함수.
+        """광고 다운로드 요청 MQTT 메시지를 처리하는 콜백 함수.
 
         메시지를 파싱하고, ACK를 전송한 후, 별도의 스레드에서 다운로드를 시작합니다.
         """
-        logger.info("Received firmware download request on topic '%s'", topic)
+        logger.info("Received advertisement download request on topic '%s'", topic)
         try:
             data = json.loads(payload)
-            content = data["content"]
-            signed_url_info = content["signed_url"]
-            file_info = content["file_info"]
 
-            download_request = FirmwareDownloadRequest(
+            contents = []
+            for content_data in data["contents"]:
+                signed_url_info = content_data["signed_url"]
+                file_info = content_data["file_info"]
+                contents.append(
+                    AdContent(
+                        signed_url=signed_url_info["url"],
+                        checksum=file_info["file_hash"],
+                        size=file_info["size"],
+                        timeout=signed_url_info["timeout"],
+                        file_id=file_info["id"],
+                    )
+                )
+
+            download_request = AdvertisementDownloadRequest(
                 command_id=data["command_id"],
-                signed_url=signed_url_info["url"],
-                checksum=file_info["file_hash"],
-                size=file_info["size"],
-                timeout=signed_url_info["timeout"],
+                contents=contents,
                 timestamp=data["timestamp"],
             )
         except (json.JSONDecodeError, TypeError, KeyError) as e:
-            logger.info("Invalid download request payload: %s", e)
+            logger.error("Invalid advertisement download request payload: %s", e)
             return
 
-        # 이미 다른 다운로드가 진행 중인지 확인
         if self._download_thread and self._download_thread.is_alive():
             logger.info(
-                "Firmware download is already in progress. Ignoring new request %s.",
+                "Advertisement download is already in progress. Ignoring new request %s.",
                 download_request.command_id,
             )
             return
 
-        # 1. 요청 수신 확인 (ACK) 메시지 전송
         self._send_ack(download_request.command_id)
 
-        # 2. 메인 스레드를 블로킹하지 않기 위해 별도의 스레드에서 다운로드 시작
         self._download_thread = threading.Thread(
-            target=self._download_firmware, args=(download_request,)
+            target=self._download_advertisements, args=(download_request,)
         )
         self._download_thread.start()
 
     def _send_ack(self, command_id: str) -> None:
-        """펌웨어 다운로드 요청에 대한 ACK 메시지를 MQTT로 발행합니다."""
-        ack_message = FirmwareDownloadAck(
+        """광고 다운로드 요청에 대한 ACK 메시지를 MQTT로 발행합니다."""
+        ack_message = AdvertisementDownloadAck(
             command_id=command_id,
             status=RequestStatus.ACKNOWLEDGED.value,
         )
@@ -152,17 +170,7 @@ class FirmwareManager:
         total_bytes: int,
         start_time: float,
     ) -> None:
-        """펌웨어 다운로드 진행 상황을 MQTT로 발행합니다.
-
-        현재 다운로드 된 바이트 수와 전체 바이트 수를
-        기반으로 진행률, 속도, ETA 등을 계산하여 전송합니다.
-
-        Args:
-            command_id: 다운로드 명령의 고유 ID.
-            downloaded_bytes: 현재까지 다운로드된 바이트 수.
-            total_bytes: 다운로드할 전체 바이트 수.
-            start_time: 다운로드 시작 시각 (epoch time).
-        """
+        """광고 다운로드 진행 상황을 MQTT로 발행합니다."""
         if total_bytes == 0:
             return
 
@@ -170,11 +178,8 @@ class FirmwareManager:
         elapsed_time = time.time() - start_time
         speed_bps = (downloaded_bytes / elapsed_time) if elapsed_time > 0 else 0
         speed_kbps = speed_bps / 1024
-        # eta_seconds = (
-        #     ((total_bytes - downloaded_bytes) / speed_bps) if speed_bps > 0 else 0
-        # )
 
-        progress_message = FirmwareDownloadProgress(
+        progress_message = AdvertisementDownloadProgress(
             command_id=command_id,
             progress=progress,
             downloaded_bytes=downloaded_bytes,
@@ -196,16 +201,8 @@ class FirmwareManager:
         checksum_verified: bool,
         download_ms: int,
     ) -> None:
-        """펌웨어 다운로드 최종 결과를 MQTT로 발행합니다.
-
-        Args:
-            command_id: 다운로드 명령의 고유 ID.
-            status: 다운로드 상태 ("success", "failed", "timeout" 등).
-            message: 상태에 대한 상세 메시지.
-            checksum_verified: 체크섬 검증 결과 (True/False).
-            download_ms: 다운로드에 소요된 시간 (밀리초).
-        """
-        result_message = FirmwareDownloadResult(
+        """광고 다운로드 최종 결과를 MQTT로 발행합니다."""
+        result_message = AdvertisementDownloadResult(
             command_id=command_id,
             status=status.value,
             message=message,
@@ -217,25 +214,8 @@ class FirmwareManager:
             json.dumps(dataclasses.asdict(result_message)),
         )
 
-    def _verify_checksum(
-        self,
-        file_path: str,
-        expected_checksum: str,
-    ) -> bool:
-        """다운로드된 파일의 체크섬을 검증합니다.
-
-        SHA256 알고리즘을 사용하여 파일의 체크섬을 계산하고,
-        기대하는 체크섬과 비교합니다. 이 때, 메모리 사용량을 줄이기 위해
-        파일을 청크 단위로 읽어 처리합니다.
-
-        Args:
-            file_path: 검증할 파일의 경로.
-            expected_checksum_str: 기대하는 체크섬 문자열
-
-        Returns:
-            tuple: (검증 성공 여부, 실제 계산된 체크섬 또는 오류 메시지)
-        """
-        # 체크섬 문자열이 "sha256:..." 형식인지 확인하고, 그렇지 않으면 기본적으로 SHA256으로 간주
+    def _verify_checksum(self, file_path: str, expected_checksum: str) -> bool:
+        """다운로드된 파일의 체크섬을 검증합니다."""
         if ":" in expected_checksum:
             algo, expected_checksum = expected_checksum.split(":", 1)
             if algo.lower() != "sha256":
@@ -245,7 +225,6 @@ class FirmwareManager:
         hasher = hashlib.sha256()
         try:
             with open(file_path, "rb") as f:
-                # 파일을 4KB 청크 단위로 읽어 메모리 사용량을 줄임. (IoT 기기와 비슷한 환경 조성)
                 for chunk in iter(lambda: f.read(4096), b""):
                     hasher.update(chunk)
             actual_hash = hasher.hexdigest()
@@ -257,61 +236,65 @@ class FirmwareManager:
             logger.error("Error during checksum verification: %s", e)
             return False
 
-    def _download_firmware(self, download_request: FirmwareDownloadRequest) -> None:
-        """HTTP 클라이언트를 사용하여 펌웨어 파일을 다운로드하는 전체 프로세스.
-
-        다운로드 진행 상황을 주기적으로 MQTT로 전송하고,
-        완료 후 체크섬을 검증하여 최종 결과를 전송합니다.
-
-        Args:
-            download_request: 펌웨어 다운로드 요청 정보가 담긴 데이터 클래스 인스턴스.
-        """
+    def _download_advertisements(
+        self, download_request: AdvertisementDownloadRequest
+    ) -> None:
+        """HTTP 클라이언트를 사용하여 광고 파일들을 다운로드하는 전체 프로세스."""
         start_time = time.time()
 
-        # 최종 결과 전송을 위한 기본값 설정
+        total_size = sum(content.size for content in download_request.contents)
+        total_downloaded_so_far = 0
+
         status: ResultStatus = ResultStatus.FAILED
         message = ""
-        checksum_verified = False
+        all_checksums_verified = True
 
         try:
-            file_path = self._http_client.download_file_with_progress(
-                signed_url=download_request.signed_url,
-                total_size=download_request.size,
-                progress_callback=lambda downloaded: self._send_progress(
-                    download_request.command_id,
-                    downloaded,
-                    download_request.size,
-                    start_time,
-                ),
-                timeout=download_request.timeout,
-            )
+            for ad_content in download_request.contents:
 
-            is_valid = self._verify_checksum(file_path, download_request.checksum)
+                def progress_callback(downloaded_for_this_file):
+                    self._send_progress(
+                        download_request.command_id,
+                        total_downloaded_so_far + downloaded_for_this_file,
+                        total_size,
+                        start_time,
+                    )
 
-            if is_valid:
-                # 성공했으므로 상태 업데이트
-                status = ResultStatus.SUCCESS
-                message = "Download completed successfully"
-                checksum_verified = True
-            else:
-                # 상태는 FAILED 유지
-                message = "Checksum mismatch."
-                checksum_verified = False
+                file_path = self._http_client.download_file_with_progress(
+                    signed_url=ad_content.signed_url,
+                    total_size=ad_content.size,
+                    progress_callback=progress_callback,
+                    timeout=ad_content.timeout,
+                )
+
+                is_valid = self._verify_checksum(file_path, ad_content.checksum)
+                if not is_valid:
+                    all_checksums_verified = False
+                    message = f"Checksum mismatch for file with id {ad_content.file_id}."
+                    status = ResultStatus.FAILED
+                    break
+
+                total_downloaded_so_far += ad_content.size
+            else:  # for-else loop: executed if the loop finished without break.
+                if all_checksums_verified:
+                    status = ResultStatus.SUCCESS
+                    message = "All advertisement contents downloaded successfully."
+                    # 메트릭 수집기에 광고 목록 업데이트
+                    ad_ids = [{ "id": content.file_id } for content in download_request.contents]
+                    self._metrics_collector.update_advertisements(ad_ids)
 
         except TimeoutError as e:
             status = ResultStatus.TIMEOUT
             message = str(e)
         except Exception as e:
-            # 그 외 모든 예외 처리
             status = ResultStatus.FAILED
             message = f"An unexpected error occurred: {e}"
         finally:
-            # 성공, 실패, 타임아웃 등 모든 경우에 마지막에 한번만 결과 전송
             download_ms = int((time.time() - start_time) * 1000)
             self._send_result(
                 download_request.command_id,
                 status,
                 message,
-                checksum_verified,
+                all_checksums_verified,
                 download_ms,
             )
