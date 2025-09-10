@@ -3,8 +3,10 @@ import os
 import time
 
 import constants
+from advertisement_manager import AdvertisementManager
 from firmware_manager import FirmwareManager
 from http_client import HttpClient
+from metrics_collector import MetricsCollector
 from mqtt_client import MqttClient
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,12 @@ class Simulator:
         self._http_client = http_client
         self._config = config
 
+        # 메트릭 수집기 인스턴스 생성
+        self._metrics_collector = MetricsCollector(
+            device_id=self._config.DEVICE_ID,
+            mqtt_client=self._mqtt_client,
+        )
+
         # 펌웨어 업데이트 로직을 처리할 FirmwareManager 인스턴스 생성
         self._firmware_manager = FirmwareManager(
             device_id=self._config.DEVICE_ID,
@@ -47,10 +55,21 @@ class Simulator:
             http_client=self._http_client,
         )
 
+        # 광고 업데이트 로직을 처리할 AdvertisementManager 인스턴스 생성
+        self._advertisement_manager = AdvertisementManager(
+            device_id=self._config.DEVICE_ID,
+            mqtt_client=self._mqtt_client,
+            http_client=self._http_client,
+            metrics_collector=self._metrics_collector,
+        )
+
     def run(self):
         """시뮬레이터를 시작합니다."""
         # MQTT 브로커에 연결
         self._mqtt_client.connect()
+
+        # 메트릭 리포터 시작
+        self._metrics_collector.start()
 
         # 펌웨어 다운로드 요청 토픽 구독
         self._mqtt_client.subscribe(
@@ -60,14 +79,40 @@ class Simulator:
             callback=self._firmware_manager.handle_download_request,
         )
 
+        # 광고 다운로드 요청 토픽 구독
+        self._mqtt_client.subscribe(
+            constants.ADVERTISEMENT_DOWNLOAD_REQUEST_TOPIC.format(
+                device_id=self._config.DEVICE_ID
+            ),
+            callback=self._advertisement_manager.handle_download_request,
+        )
+
     def stop(self):
         """시뮬레이터를 중지합니다."""
+        self._metrics_collector.stop()
         self._mqtt_client.disconnect()
 
 
 if __name__ == "__main__":
     # 1. 설정 초기화
     config = Config()
+
+    logger.info("====== Device Simulator started. ======")
+    logger.info("Device ID  : %s", config.DEVICE_ID)
+    logger.info("Broker URL : %s", config.BROKER_URL)
+    logger.info("Broker Port: %d", config.BROKER_PORT)
+    logger.info("=======================================")
+    logger.info(
+        "Listening for firmware messages on topic: %s",
+        constants.FIRMWARE_DOWNLOAD_REQUEST_TOPIC.format(device_id=config.DEVICE_ID),
+    )
+    logger.info(
+        "Listening for advertisement messages on topic: %s",
+        constants.ADVERTISEMENT_DOWNLOAD_REQUEST_TOPIC.format(
+            device_id=config.DEVICE_ID
+        ),
+    )
+    logger.info("Press Ctrl+C to exit.")
 
     # 2. 클라이언트 인스턴스 생성
     http_client = HttpClient(config.DOWNLOAD_CHUNK_SIZE)
@@ -80,17 +125,6 @@ if __name__ == "__main__":
     # 3. 시뮬레이터 인스턴스 생성 및 실행
     simulator = Simulator(mqtt_client, http_client, config)
     simulator.run()
-
-    logger.info("====== Device Simulator started. ======")
-    logger.info("Device ID  : %s", config.DEVICE_ID)
-    logger.info("Broker URL : %s", config.BROKER_URL)
-    logger.info("Broker Port: %d", config.BROKER_PORT)
-    logger.info("=======================================")
-    logger.info(
-        "Listening for messages on topic: %s",
-        constants.FIRMWARE_DOWNLOAD_REQUEST_TOPIC.format(device_id=config.DEVICE_ID),
-    )
-    logger.info("Press Ctrl+C to exit.")
 
     try:
         # MQTT 클라이언트가 백그라운드에서 메시지를 처리하므로
