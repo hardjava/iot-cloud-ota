@@ -195,9 +195,9 @@ export const AdDeploy = ({ ads, onClose }: AdDeployProps): JSX.Element => {
         deployAds({
           adIds: ads.map((ad) => ad.id),
           deploymentType,
-          regions: selectedRegions,
-          groups: selectedGroups,
-          devices: selectedDevices,
+          regions: selectedRegions.map((r) => r.regionId),
+          groups: selectedGroups.map((g) => g.groupId),
+          devices: selectedDevices.map((d) => d.deviceId),
         }),
         {
           pending: "배포 요청 중...",

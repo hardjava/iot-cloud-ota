@@ -4,7 +4,7 @@ import { PaginationMeta } from "../../../shared/api/types";
  * 기기(Device) 정보를 나타내는 인터페이스입니다.
  */
 export interface Device {
-  deviceId: string;
+  deviceId: number;
   deviceName: string;
   regionName: string;
   groupName: string;
