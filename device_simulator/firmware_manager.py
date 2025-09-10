@@ -63,7 +63,7 @@ class FirmwareDownloadResult:
     status: str
     message: str
     checksum_verified: bool
-    download_seconds: float
+    download_ms: int
     timestamp: str = dataclasses.field(
         default_factory=lambda: datetime.now(timezone.utc)
         .isoformat()
@@ -194,7 +194,7 @@ class FirmwareManager:
         status: ResultStatus,
         message: str,
         checksum_verified: bool,
-        download_seconds: float,
+        download_ms: int,
     ) -> None:
         """펌웨어 다운로드 최종 결과를 MQTT로 발행합니다.
 
@@ -203,14 +203,14 @@ class FirmwareManager:
             status: 다운로드 상태 ("success", "failed", "timeout" 등).
             message: 상태에 대한 상세 메시지.
             checksum_verified: 체크섬 검증 결과 (True/False).
-            download_seconds: 다운로드에 소요된 시간 (초).
+            download_ms: 다운로드에 소요된 시간 (밀리초).
         """
         result_message = FirmwareDownloadResult(
             command_id=command_id,
             status=status.value,
             message=message,
             checksum_verified=checksum_verified,
-            download_seconds=download_seconds,
+            download_ms=download_ms,
         )
         self._mqtt_client.publish(
             constants.FIRMWARE_DOWNLOAD_RESULT_TOPIC.format(device_id=self._device_id),
@@ -307,11 +307,11 @@ class FirmwareManager:
             message = f"An unexpected error occurred: {e}"
         finally:
             # 성공, 실패, 타임아웃 등 모든 경우에 마지막에 한번만 결과 전송
-            download_seconds = time.time() - start_time
+            download_ms = int((time.time() - start_time) * 1000)
             self._send_result(
                 download_request.command_id,
                 status,
                 message,
                 checksum_verified,
-                download_seconds,
+                download_ms,
             )
