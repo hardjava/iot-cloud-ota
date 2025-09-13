@@ -22,18 +22,17 @@ type Cmd struct {
 // Cmd 구조체를 초기화하고, HTTP 서버를 시작합니다.
 func NewCmd() *Cmd {
 	c := &Cmd{
-		config:        config.NewConfig(),
-		network:       network.NewNetwork(),
-		mqttClient:    mqttclient.NewMqttClient(),
-		questDBClient: repository.NewDBClient(),
+		config:     config.NewConfig(),
+		network:    network.NewNetwork(),
+		mqttClient: mqttclient.NewMqttClient(),
 	}
 	ctx := context.TODO()
 
-	// Quest DB 연결
-	c.questDBClient.Connect(ctx, c.config.QuestDB.Conf)
-
-	// event consumer 고루틴 실행
-	go c.questDBClient.StartAllConsumer()
+	// Consumer별로 독립 DBClient 생성
+	go repository.NewDBClient(ctx, c.config.QuestDB.Conf).StartEventConsumer()
+	go repository.NewDBClient(ctx, c.config.QuestDB.Conf).StartSystemStatusConsumer()
+	go repository.NewDBClient(ctx, c.config.QuestDB.Conf).StartErrorLogConsumer()
+	go repository.NewDBClient(ctx, c.config.QuestDB.Conf).StartSalesItemConsumer()
 
 	// MQTT 연결
 	c.mqttClient.Connect(c.config.MqttBroker.Url, c.config.MqttBroker.ClientId)

@@ -2,17 +2,9 @@ package repository
 
 import (
 	"context"
+	"github.com/questdb/go-questdb-client/v3"
 	"log"
 	"mqtt-handler/types"
-	"sync"
-
-	"github.com/questdb/go-questdb-client/v3"
-)
-
-// DB 클라이언트 싱글톤 초기화를 위한 sync.Once 및 인스턴스
-var (
-	questDBClientInit     sync.Once
-	questDBClientInstance *DBClient
 )
 
 // 다운로드 이벤트 처리를 위한 비동기 채널
@@ -32,22 +24,12 @@ type DBClient struct {
 	sender questdb.LineSender
 }
 
-// 싱글톤 패턴으로 DBClient 인스턴스를 한 번만 생성합니다.
-func NewDBClient() *DBClient {
-	questDBClientInit.Do(func() {
-		questDBClientInstance = &DBClient{}
-	})
-	return questDBClientInstance
-}
-
-// QuestDB에 연결을 수행하고, 연결 성공 시 LineSender를 초기화합니다.
-func (c *DBClient) Connect(ctx context.Context, configStr string) error {
-	sender, err := questdb.LineSenderFromConf(ctx, configStr)
+// DBClient 생성자
+func NewDBClient(ctx context.Context, confStr string) *DBClient {
+	sender, err := questdb.LineSenderFromConf(ctx, confStr)
 	if err != nil {
-		log.Fatalf("[QuestDB] 연결 실패")
-		return err
+		log.Fatalf("[QuestDB] 연결 실패: %v", err)
 	}
-	c.sender = sender
 	log.Println("[QuestDB] 연결 완료")
-	return nil
+	return &DBClient{sender: sender}
 }

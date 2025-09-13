@@ -3,132 +3,142 @@ package repository
 import (
 	"context"
 	"log"
+	"time"
 )
 
-// InsertChan 채널로부터 다운로드 이벤트를 지속적으로 수신하여 QuestDB에 기록하는 백그라운드 consumer 함수입니다.
+// StartEventConsumer : download_events
 func (c *DBClient) StartEventConsumer() {
-	for event := range DownloadInsertChan {
-		ctx := context.TODO()
-		err := c.sender.Table("download_events").
-			Symbol("command_id", event.CommandID).
-			Symbol("message", event.Message).
-			Symbol("status", event.Status).
-			Int64Column("device_id", event.DeviceID).
-			Int64Column("progress", event.Progress).
-			Int64Column("total_bytes", event.TotalBytes).
-			Int64Column("download_bytes", event.DownloadBytes).
-			Float64Column("speed_kbps", event.SpeedKbps).
-			BoolColumn("checksum_verified", event.ChecksumVerified).
-			Int64Column("download_ms", event.DownloadMs).
-			At(ctx, event.Timestamp.UTC())
+	ticker := time.NewTicker(1 * time.Second) // 1초마다 flush
+	defer ticker.Stop()
 
-		if err != nil {
-			log.Printf("[ERROR] QuestDB Insert 실패: %v", err)
-			continue
-		}
-		if err := c.sender.Flush(ctx); err != nil {
-			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
-		}
-	}
-}
+	for {
+		select {
+		case event := <-DownloadInsertChan:
+			ctx := context.TODO()
+			if err := c.sender.Table("download_events").
+				Symbol("command_id", event.CommandID).
+				Symbol("message", event.Message).
+				Symbol("status", event.Status).
+				Int64Column("device_id", event.DeviceID).
+				Int64Column("progress", event.Progress).
+				Int64Column("total_bytes", event.TotalBytes).
+				Int64Column("download_bytes", event.DownloadBytes).
+				Float64Column("speed_kbps", event.SpeedKbps).
+				BoolColumn("checksum_verified", event.ChecksumVerified).
+				Int64Column("download_ms", event.DownloadMs).
+				At(ctx, event.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] download_events insert 실패: %v", err)
+			}
 
-// InsertChan 채널로부터 시스템 상태 이벤트를 지속적으로 수신하여 QuestDB에 기록하는 백그라운드 consumer 함수입니다.
-func (c *DBClient) StartSystemStatusConsumer() {
-	for event := range SystemStatusInsertChan {
-		ctx := context.TODO()
-
-		// 1. system_status 저장
-		if err := c.sender.Table("system_status").
-			Int64Column("device_id", event.DeviceId).
-			Float64Column("cpu_core_0", event.System.CpuUsage.Core0).
-			Float64Column("cpu_core_1", event.System.CpuUsage.Core1).
-			Float64Column("memory_usage", event.System.MemoryUsage).
-			Float64Column("storage_usage", event.System.StorageUsage).
-			Int64Column("uptime", event.System.Uptime).
-			At(ctx, event.Timestamp.UTC()); err != nil {
-			log.Printf("[ERROR] system_status Insert 실패: %v", err)
-		}
-
-		// 2. network_status 저장
-		if err := c.sender.Table("network_status").
-			Int64Column("device_id", event.DeviceId).
-			StringColumn("connection_type", event.Network.ConnectionType).
-			Int64Column("signal_strength", event.Network.SignalStrength).
-			StringColumn("local_ip", event.Network.LocalIp).
-			StringColumn("gateway_ip", event.Network.GatewayIp).
-			At(ctx, event.Timestamp.UTC()); err != nil {
-			log.Printf("[ERROR] network_status Insert 실패: %v", err)
-		}
-
-		// 3. advertisement_status 저장
-		for _, ad := range event.Advertisements {
-			err := c.sender.Table("advertisement_status").
-				Int64Column("device_id", event.DeviceId).
-				Int64Column("ad_id", ad.Id).
-				At(ctx, event.Timestamp.UTC())
-			if err != nil {
-				log.Printf("[ERROR] advertisement_status Insert 실패: %v", err)
+		case <-ticker.C:
+			if err := c.sender.Flush(context.TODO()); err != nil {
+				log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
 			}
 		}
+	}
+}
 
-		// 4. firmware_status 저장
-		if err := c.sender.Table("firmware_status").
-			Int64Column("device_id", event.DeviceId).
-			StringColumn("firmware_version", event.FirmwareVersion).
-			At(ctx, event.Timestamp.UTC()); err != nil {
-			log.Printf("[ERROR] firmware_status Insert 실패: %v", err)
-		}
+// StartSystemStatusConsumer : system_status, network_status, advertisement_status, firmware_status
+func (c *DBClient) StartSystemStatusConsumer() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		// 최종 flush
-		if err := c.sender.Flush(ctx); err != nil {
-			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+	for {
+		select {
+		case event := <-SystemStatusInsertChan:
+			ctx := context.TODO()
+
+			if err := c.sender.Table("system_status").
+				Int64Column("device_id", event.DeviceId).
+				Float64Column("cpu_core_0", event.System.CpuUsage.Core0).
+				Float64Column("cpu_core_1", event.System.CpuUsage.Core1).
+				Float64Column("memory_usage", event.System.MemoryUsage).
+				Float64Column("storage_usage", event.System.StorageUsage).
+				Int64Column("uptime", event.System.Uptime).
+				At(ctx, event.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] system_status insert 실패: %v", err)
+			}
+
+			if err := c.sender.Table("network_status").
+				Int64Column("device_id", event.DeviceId).
+				StringColumn("connection_type", event.Network.ConnectionType).
+				Int64Column("signal_strength", event.Network.SignalStrength).
+				StringColumn("local_ip", event.Network.LocalIp).
+				StringColumn("gateway_ip", event.Network.GatewayIp).
+				At(ctx, event.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] network_status insert 실패: %v", err)
+			}
+
+			for _, ad := range event.Advertisements {
+				if err := c.sender.Table("advertisement_status").
+					Int64Column("device_id", event.DeviceId).
+					Int64Column("ad_id", ad.Id).
+					At(ctx, event.Timestamp.UTC()); err != nil {
+					log.Printf("[ERROR] advertisement_status insert 실패: %v", err)
+				}
+			}
+
+			if err := c.sender.Table("firmware_status").
+				Int64Column("device_id", event.DeviceId).
+				StringColumn("firmware_version", event.FirmwareVersion).
+				At(ctx, event.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] firmware_status insert 실패: %v", err)
+			}
+
+		case <-ticker.C:
+			if err := c.sender.Flush(context.TODO()); err != nil {
+				log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+			}
 		}
 	}
 }
 
-// InsertChan 채널로부터 에러 로그 이벤트를 지속적으로 수신하여 QuestDB에 기록하는 백그라운드 consumer 함수입니다.
+// StartErrorLogConsumer : error_logs
 func (c *DBClient) StartErrorLogConsumer() {
-	for event := range ErrorLogInsertChan {
-		ctx := context.TODO()
-		err := c.sender.Table("error_logs").
-			Int64Column("device_id", event.DeviceId).
-			StringColumn("error_tag", event.ErrorLog.ErrorTag).
-			StringColumn("log", event.ErrorLog.Log).
-			At(ctx, event.ErrorLog.Timestamp.UTC())
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		if err != nil {
-			log.Printf("[ERROR] QuestDB Insert 실패: %v", err)
-			continue
-		}
-		if err := c.sender.Flush(ctx); err != nil {
-			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+	for {
+		select {
+		case event := <-ErrorLogInsertChan:
+			ctx := context.TODO()
+			if err := c.sender.Table("error_logs").
+				Int64Column("device_id", event.DeviceId).
+				StringColumn("error_tag", event.ErrorLog.ErrorTag).
+				StringColumn("log", event.ErrorLog.Log).
+				At(ctx, event.ErrorLog.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] error_logs insert 실패: %v", err)
+			}
+
+		case <-ticker.C:
+			if err := c.sender.Flush(context.TODO()); err != nil {
+				log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+			}
 		}
 	}
 }
 
+// StartSalesItemConsumer : sales_data
 func (c *DBClient) StartSalesItemConsumer() {
-	for event := range SalesDataInsertChan {
-		ctx := context.TODO()
-		err := c.sender.Table("sales_data").
-			Int64Column("device_id", event.DeviceId).
-			StringColumn("type", event.SalesData.Type).
-			StringColumn("sub_type", event.SalesData.SubType).
-			At(ctx, event.SalesData.Timestamp.UTC())
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		if err != nil {
-			log.Printf("[ERROR] QuestDB Insert 실패: %v", err)
-			continue
-		}
-		if err := c.sender.Flush(ctx); err != nil {
-			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+	for {
+		select {
+		case event := <-SalesDataInsertChan:
+			ctx := context.TODO()
+			if err := c.sender.Table("sales_data").
+				Int64Column("device_id", event.DeviceId).
+				StringColumn("type", event.SalesData.Type).
+				StringColumn("sub_type", event.SalesData.SubType).
+				At(ctx, event.SalesData.Timestamp.UTC()); err != nil {
+				log.Printf("[ERROR] sales_data insert 실패: %v", err)
+			}
+
+		case <-ticker.C:
+			if err := c.sender.Flush(context.TODO()); err != nil {
+				log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
+			}
 		}
 	}
-}
-
-// StartAllConsumer는 모든 이벤트 소비자(consumer)를 백그라운드에서 시작합니다.
-func (c *DBClient) StartAllConsumer() {
-	go c.StartEventConsumer()
-	go c.StartSystemStatusConsumer()
-	go c.StartErrorLogConsumer()
-	go c.StartSalesItemConsumer()
 }

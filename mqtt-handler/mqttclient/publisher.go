@@ -7,14 +7,15 @@ import (
 	"log"
 	"mqtt-handler/repository"
 	"mqtt-handler/types"
-	"sync"
+	"time"
 )
+
+const publishDelay = 10 * time.Millisecond
 
 // MQTT 클라이언트를 사용해 지정된 토픽으로 JSON 형태의 펌웨어 배포 요청 메시지를 전송합니다.
 func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 	var buf bytes.Buffer
 
-	var wg sync.WaitGroup
 	command := types.FirmwareDownloadCommand{
 		CommandID: req.CommandId,
 		Content:   req.Content,
@@ -29,18 +30,14 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 	}
 	payload := buf.String()
 
-	for _, deviceInfo := range req.Devices {
-		wg.Add(1)
-
-		deviceInfoCopy := deviceInfo
-		go func(d types.DeviceIds) {
-			defer wg.Done()
-			topic := fmt.Sprintf("v1/%d/update/request/firmware", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+	go func() {
+		for _, deviceInfo := range req.Devices {
+			topic := fmt.Sprintf("v1/%d/update/request/firmware", deviceInfo.DeviceId)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
-				DeviceID:         d.DeviceId,
+				DeviceID:         deviceInfo.DeviceId,
 				Message:          "Download Command",
 				Status:           "WAITING",
 				Progress:         0,
@@ -56,15 +53,13 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-		}(deviceInfoCopy)
-	}
-
-	wg.Wait()
+			time.Sleep(publishDelay)
+		}
+	}()
 }
 
 // MQTT 클라이언트를 사용해 지정된 토픽으로 JSON 형태의 펌웨어 배포 취소 요청 메시지를 전송합니다.
 func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest) {
-	var wg sync.WaitGroup
 
 	command := types.DownloadCancelCommand{
 		CommandID: req.CommandID,
@@ -78,18 +73,14 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 		return
 	}
 
-	for _, deviceInfo := range req.Devices {
-		wg.Add(1)
-
-		deviceInfoCopy := deviceInfo
-		go func(d types.DeviceIds) {
-			defer wg.Done()
-			topic := fmt.Sprintf("v1/%d/update/cancel", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+	go func() {
+		for _, deviceInfo := range req.Devices {
+			topic := fmt.Sprintf("v1/%d/update/cancel", deviceInfo.DeviceId)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
-				DeviceID:         d.DeviceId,
+				DeviceID:         deviceInfo.DeviceId,
 				Message:          command.Reason,
 				Status:           "CANCELED",
 				Progress:         0,
@@ -105,16 +96,14 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-		}(deviceInfoCopy)
-	}
-
-	wg.Wait()
+			time.Sleep(publishDelay)
+		}
+	}()
 }
 
 func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 	var buf bytes.Buffer
 
-	var wg sync.WaitGroup
 	command := types.AdsDownloadCommand{
 		CommandID: req.CommandId,
 		Contents:  req.Contents,
@@ -133,19 +122,14 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 		return
 	}
 	payload := buf.String()
-
-	for _, deviceInfo := range req.Devices {
-		wg.Add(1)
-
-		deviceInfoCopy := deviceInfo
-		go func(d types.DeviceIds) {
-			defer wg.Done()
-			topic := fmt.Sprintf("v1/%d/update/request/advertisement", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+	go func() {
+		for _, deviceInfo := range req.Devices {
+			topic := fmt.Sprintf("v1/%d/update/request/advertisement", deviceInfo.DeviceId)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
-				DeviceID:         d.DeviceId,
+				DeviceID:         deviceInfo.DeviceId,
 				Message:          "Download Command",
 				Status:           "WAITING",
 				Progress:         0,
@@ -161,8 +145,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-		}(deviceInfoCopy)
-	}
-
-	wg.Wait()
+			time.Sleep(publishDelay)
+		}
+	}()
 }

@@ -34,9 +34,7 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 // NewMqttClient는 MQTTClient 인스턴스를 한 번만 생성합니다.
 func NewMqttClient() *MQTTClient {
 	mqttClientInit.Do(func() {
-		mqttClientInstance = &MQTTClient{
-			dbClient: repository.NewDBClient(),
-		}
+		mqttClientInstance = &MQTTClient{}
 	})
 
 	return mqttClientInstance
@@ -52,9 +50,9 @@ func (m *MQTTClient) Connect(brokerURL string, clientId string) {
 
 	// 안정성 튜닝
 	opts.SetKeepAlive(30 * time.Second)
-	opts.SetPingTimeout(10 * time.Second)
-	opts.SetWriteTimeout(10 * time.Second)
-	opts.SetConnectTimeout(10 * time.Second)
+	opts.SetPingTimeout(30 * time.Second)
+	opts.SetWriteTimeout(30 * time.Second)
+	opts.SetConnectTimeout(30 * time.Second)
 
 	// 끊겨도 자동 복구
 	opts.SetAutoReconnect(true)
