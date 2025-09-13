@@ -23,6 +23,7 @@ type Cmd struct {
 func NewCmd() *Cmd {
 	c := &Cmd{
 		config:        config.NewConfig(),
+		network:       network.NewNetwork(),
 		mqttClient:    mqttclient.NewMqttClient(),
 		questDBClient: repository.NewDBClient(),
 	}
@@ -36,9 +37,6 @@ func NewCmd() *Cmd {
 
 	// MQTT 연결
 	c.mqttClient.Connect(c.config.MqttBroker.Url, c.config.MqttBroker.ClientId)
-
-	// network 초기화 - MQTT 클라이언트를 주입합니다.
-	c.network = network.NewNetwork(c.mqttClient)
 
 	// HTTP 서버 시작
 	if err := c.network.ServerStart(c.config.Server.Port); err != nil {
