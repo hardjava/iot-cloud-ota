@@ -24,7 +24,7 @@ var SystemStatusInsertChan = make(chan types.SystemStatusEvent, 10000)
 // 에러 로그 이벤트 처리를 위한 비동기 채널
 var ErrorLogInsertChan = make(chan types.ErrorLogEvent, 10000)
 
-// 판매 데이터 이벤트 처리를 위한 비동기 채널
+// 판매 데이터 이벤트 처리를 위한 비동기 채널 10000개
 var SalesDataInsertChan = make(chan types.SalesDataEvent, 10000)
 
 // DBClient는 QuestDB와 통신하기 위한 객체입니다.
