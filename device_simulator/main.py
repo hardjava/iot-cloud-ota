@@ -26,6 +26,7 @@ class Config:
     DOWNLOAD_CHUNK_SIZE = int(
         os.getenv("DOWNLOAD_CHUNK_SIZE", constants.DEFAULT_DOWNLOAD_CHUNK_SIZE)
     )
+    SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", constants.DEFAULT_SLEEP_INTERVAL))
 
 
 class Simulator:
@@ -115,7 +116,10 @@ if __name__ == "__main__":
     logger.info("Press Ctrl+C to exit.")
 
     # 2. 클라이언트 인스턴스 생성
-    http_client = HttpClient(config.DOWNLOAD_CHUNK_SIZE)
+    http_client = HttpClient(
+        config.DOWNLOAD_CHUNK_SIZE,
+        config.SLEEP_INTERVAL,
+    )
     mqtt_client = MqttClient(
         config.BROKER_URL,
         config.BROKER_PORT,
