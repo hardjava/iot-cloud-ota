@@ -1,6 +1,7 @@
 from enum import Enum
 
 DEFAULT_DOWNLOAD_CHUNK_SIZE = 1024 * 10  # 10KB
+DEFAULT_SLEEP_INTERVAL = 1 # 1초
 
 # MQTT Topics
 BASE_TOPIC = "v1/{device_id}"

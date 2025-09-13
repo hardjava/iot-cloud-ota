@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from typing import Callable
 from urllib.parse import urlparse
 
@@ -14,6 +15,7 @@ class HttpClient:
     def __init__(
         self,
         download_chunk_size: int,
+        sleep_interval: float,
     ) -> None:
         """HttpClient를 초기화합니다.
 
@@ -21,6 +23,7 @@ class HttpClient:
             download_chunk_size: 파일 다운로드 시 사용할 청크 크기 (바이트).
         """
         self._download_chunk_size = download_chunk_size
+        self._sleep_interval = sleep_interval
         logging.info("HttpClient has been initialized successfully.")
 
     def download_file_with_progress(
@@ -74,6 +77,7 @@ class HttpClient:
                             f.write(chunk)
                             downloaded_bytes += len(chunk)
                             progress_callback(downloaded_bytes)
+                            time.sleep(self._sleep_interval) # 너무 빠른 진행 상황 업데이트를 방지하기 위해 잠시 대기
 
                 # 다운로드가 완료된 후 최종 진행 상황(100%)을 보고
                 progress_callback(downloaded_bytes)
