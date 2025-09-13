@@ -6,13 +6,6 @@ import (
 	"mqtt-handler/mqttclient"
 	"mqtt-handler/types"
 	"net/http"
-	"sync"
-)
-
-// advertisementRouterInit: advertisementRouter 싱글톤 초기화를 위한 sync.Once
-var (
-	advertisementRouterInit     sync.Once
-	advertisementRouterInstance *advertisementRouter
 )
 
 // advertisementRouter: 광고 배포 관련 라우팅 로직을 담당하는 구조체
@@ -21,17 +14,15 @@ type advertisementRouter struct {
 	mqttClient *mqttclient.MQTTClient
 }
 
-// advertisementRouter를 한 번만 초기화하고, 요청 경로에 대한 핸들러를 등록합니다.
-func newAdsRouter(router *Network) *advertisementRouter {
-	advertisementRouterInit.Do(func() {
-		advertisementRouterInstance = &advertisementRouter{
-			router:     router,
-			mqttClient: mqttclient.NewMqttClient(),
-		}
-		router.adsDeployPOST("/api/advertisements/deployment", advertisementRouterInstance.sendAdvertisement)
-	})
+// advertisementRouter를 초기화하고, 요청 경로에 대한 핸들러를 등록합니다.
+func newAdsRouter(router *Network, mqttClient *mqttclient.MQTTClient) *advertisementRouter {
+	adsRouter := &advertisementRouter{
+		router:     router,
+		mqttClient: mqttClient,
+	}
+	router.adsDeployPOST("/api/advertisements/deployment", adsRouter.sendAdvertisement)
 
-	return advertisementRouterInstance
+	return adsRouter
 }
 
 // 광고 배포 요청을 처리하는 핸들러 함수
