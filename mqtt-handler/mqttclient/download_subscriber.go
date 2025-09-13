@@ -15,7 +15,6 @@ import (
 // 공통 구독 함수 - 다양한 펌웨어 토픽에 대해 메시지를 처리하는 핸들러를 등록
 func (m *MQTTClient) subscribe(topic string, parseFunc func(mqtt.Message) (*types.DownloadEvent, error), label string) {
 	handler := func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("[MQTT] %s 수신 - 토픽: %s", label, msg.Topic())
 
 		event, err := parseFunc(msg)
 		if err != nil {

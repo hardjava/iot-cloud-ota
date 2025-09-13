@@ -54,7 +54,7 @@ func (f *firmwareRouter) firmwareDeploy(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	PrintDownloadLog(&req)
+	//PrintDownloadLog(&req)
 
 	f.mqttClient.PublishDownloadRequest(&req)
 	f.router.okResponse(w, types.FirmwareDeployResponse{
@@ -79,7 +79,7 @@ func (f *firmwareRouter) cancelFirmwareDeploy(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	PrintDownloadCancelLog(&req)
+	//PrintDownloadCancelLog(&req)
 
 	f.mqttClient.PublishDownloadCancelRequest(&req)
 	f.router.okResponse(w, types.FirmwareDeployResponse{

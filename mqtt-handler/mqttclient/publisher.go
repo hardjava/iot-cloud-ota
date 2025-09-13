@@ -55,8 +55,6 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 			token.Wait()
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
-			} else {
-				log.Printf("[MQTT] Publish 성공: %s", topic)
 			}
 		}(deviceInfoCopy)
 	}
@@ -106,8 +104,6 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 			token.Wait()
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
-			} else {
-				log.Printf("[MQTT] Publish 성공: %s", topic)
 			}
 		}(deviceInfoCopy)
 	}
@@ -164,8 +160,6 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 			token.Wait()
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
-			} else {
-				log.Printf("[MQTT] Publish 성공: %s", topic)
 			}
 		}(deviceInfoCopy)
 	}

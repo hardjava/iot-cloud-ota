@@ -13,7 +13,6 @@ import (
 // 에러 로그 메시지 구독 및 처리
 func (m *MQTTClient) subscribeErrorLog(topic string, parseFunc func(mqtt.Message) (*types.ErrorLogEvent, error), label string) {
 	handler := func(client mqtt.Client, msg mqtt.Message) {
-		log.Printf("[MQTT] %s 수신 - 토픽: %s", label, msg.Topic())
 
 		event, err := parseFunc(msg)
 		if err != nil {
