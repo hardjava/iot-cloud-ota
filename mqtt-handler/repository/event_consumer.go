@@ -28,8 +28,6 @@ func (c *DBClient) StartEventConsumer() {
 		}
 		if err := c.sender.Flush(ctx); err != nil {
 			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
-		} else {
-			log.Printf("[DB] Insert 성공 - command_id: %s, device_id: %d, status: %s", event.CommandID, event.DeviceID, event.Status)
 		}
 	}
 }
@@ -84,9 +82,6 @@ func (c *DBClient) StartSystemStatusConsumer() {
 		// 최종 flush
 		if err := c.sender.Flush(ctx); err != nil {
 			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
-		} else {
-			log.Printf("[DB] Insert 성공 - device_id: %d (system + network + %d ads)",
-				event.DeviceId, len(event.Advertisements))
 		}
 	}
 }
@@ -107,8 +102,6 @@ func (c *DBClient) StartErrorLogConsumer() {
 		}
 		if err := c.sender.Flush(ctx); err != nil {
 			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
-		} else {
-			log.Printf("[DB] Insert 성공 - device_id: %d, error_tag: %s", event.DeviceId, event.ErrorLog.ErrorTag)
 		}
 	}
 }
@@ -128,8 +121,6 @@ func (c *DBClient) StartSalesItemConsumer() {
 		}
 		if err := c.sender.Flush(ctx); err != nil {
 			log.Printf("[ERROR] QuestDB Flush 실패: %v", err)
-		} else {
-			log.Printf("[DB] Insert 성공 - device_id: %d, Sales Type: %s", event.DeviceId, event.SalesData.Type)
 		}
 	}
 }

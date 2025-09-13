@@ -52,7 +52,7 @@ func (f *advertisementRouter) sendAdvertisement(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	PrintDownloadAdsRequestLog(&req)
+	//PrintDownloadAdsRequestLog(&req)
 
 	f.mqttClient.PublishAdsDownloadRequest(&req)
 	f.router.okResponse(w, types.AdsDeployResponse{
