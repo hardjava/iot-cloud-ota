@@ -46,8 +46,8 @@ resource "aws_ecs_task_definition" "backend" {
   family                   = "backend"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "2048"
+  memory                   = "4096"
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.backend.arn
 
@@ -117,7 +117,7 @@ resource "aws_ecs_service" "backend" {
   desired_count                     = 1
   launch_type                       = "FARGATE"
   enable_execute_command            = true
-  health_check_grace_period_seconds = 300 // NOTE: Spring Boot가 실행되기까지 오래 걸려서 기다리지 않으면 health check에 실패합니다
+  health_check_grace_period_seconds = 400 // NOTE: Spring Boot가 실행되기까지 오래 걸려서 기다리지 않으면 health check에 실패합니다
 
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]

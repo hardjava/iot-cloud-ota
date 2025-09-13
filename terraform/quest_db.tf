@@ -27,7 +27,7 @@ resource "aws_ebs_volume" "questdb_volume" {
 
 resource "aws_instance" "questdb" {
   ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.small"
+  instance_type               = "t3.medium"
   subnet_id                   = aws_subnet.private_a.id
   vpc_security_group_ids      = [aws_security_group.questdb.id]
   associate_public_ip_address = false
