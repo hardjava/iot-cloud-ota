@@ -36,7 +36,7 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 		go func(d types.DeviceIds) {
 			defer wg.Done()
 			topic := fmt.Sprintf("v1/%d/update/request/firmware", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
@@ -85,7 +85,7 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 		go func(d types.DeviceIds) {
 			defer wg.Done()
 			topic := fmt.Sprintf("v1/%d/update/cancel", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
@@ -141,7 +141,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 		go func(d types.DeviceIds) {
 			defer wg.Done()
 			topic := fmt.Sprintf("v1/%d/update/request/advertisement", d.DeviceId)
-			token := m.mqttClient.Publish(topic, 2, false, payload)
+			token := m.mqttClient.Publish(topic, 1, false, payload)
 
 			event := types.DownloadEvent{
 				CommandID:        command.CommandID,
