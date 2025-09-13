@@ -154,7 +154,11 @@ public class DeviceService {
      * @return DeviceListResponseDto (디바이스 목록과 페이지 메타데이터)
      */
     public DeviceListResponseDto findAllDevices(Long regionId, Long groupId, PaginationInfo paginationInfo) {
-        Pageable pageable = PageRequest.of(paginationInfo.page() - 1, paginationInfo.limit(), Sort.by("createdAt").ascending());
+        Pageable pageable = PageRequest.of(
+                paginationInfo.page() - 1,
+                paginationInfo.limit(),
+                Sort.by("createdAt").ascending().and(Sort.by("id").ascending())
+        );
         Page<Device> devicesPage = deviceJpaRepository.findByRegionAndGroup(regionId, groupId, pageable);
         List<Device> content = devicesPage.getContent();
 
