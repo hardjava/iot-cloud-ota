@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const publishDelay = 10 * time.Millisecond
+
 // MQTT 클라이언트를 사용해 지정된 토픽으로 JSON 형태의 펌웨어 배포 요청 메시지를 전송합니다.
 func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 	var buf bytes.Buffer
@@ -51,7 +53,7 @@ func (m *MQTTClient) PublishDownloadRequest(req *types.FirmwareDeployRequest) {
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(publishDelay)
 		}
 	}()
 }
@@ -93,7 +95,7 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(publishDelay)
 		}
 	}()
 }
@@ -143,7 +145,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 			if token.Error() != nil {
 				log.Printf("[MQTT] Publish 실패: %s → %v", topic, token.Error())
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(publishDelay)
 		}
 	}()
 }
