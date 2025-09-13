@@ -92,8 +92,8 @@ resource "aws_ecs_task_definition" "emqx" {
   family                   = "emqx"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "2048"
+  memory                   = "4096"
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.ecs_task_execution.arn
 
