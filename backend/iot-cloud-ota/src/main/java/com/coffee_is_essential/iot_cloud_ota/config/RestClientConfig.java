@@ -11,8 +11,8 @@ import java.time.Duration;
 
 @Configuration
 public class RestClientConfig {
-    private static final int CONNECTION_TIMEOUT = 5;
-    private static final int READ_TIMEOUT = 5;
+    private static final int CONNECTION_TIMEOUT = 60;
+    private static final int READ_TIMEOUT = 60;
 
     @Bean
     public RestClient restClient(RestClient.Builder builder) {
