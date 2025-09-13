@@ -6,6 +6,14 @@ import (
 	"mqtt-handler/mqttclient"
 	"mqtt-handler/types"
 	"net/http"
+	"sync"
+)
+
+// firmwareRouterInit: firmwareRouter 싱글톤 초기화를 위한 sync.Once
+// firmwareRouterInstance: 실제 싱글톤 인스턴스
+var (
+	firmwareRouterInit     sync.Once
+	firmwareRouterInstance *firmwareRouter
 )
 
 // 펌웨어 배포 관련 라우팅 로직을 담당하는 구조체
@@ -14,16 +22,19 @@ type firmwareRouter struct {
 	mqttClient *mqttclient.MQTTClient
 }
 
-// firmwareRouter를 초기화하고, 요청 경로에 대한 핸들러를 등록합니다.
-func newFirmwareRouter(router *Network, mqttClient *mqttclient.MQTTClient) *firmwareRouter {
-	fRouter := &firmwareRouter{
-		router:     router,
-		mqttClient: mqttClient,
-	}
-	router.firmwareDeployPOST("/api/firmwares/deployment", fRouter.firmwareDeploy)
-	router.firmwareDeployPOST("/api/firmwares/deployment/cancel", fRouter.cancelFirmwareDeploy)
+// firmwareRouter를 한 번만 초기화하고, 요청 경로에 대한 핸들러를 등록합니다.
+func newFirmwareRouter(router *Network) *firmwareRouter {
+	firmwareRouterInit.Do(func() {
+		firmwareRouterInstance = &firmwareRouter{
+			router:     router,
+			mqttClient: mqttclient.NewMqttClient(),
+		}
+		router.firmwareDeployPOST("/api/firmwares/deployment", firmwareRouterInstance.firmwareDeploy)
+		router.firmwareDeployPOST("/api/firmwares/deployment/cancel", firmwareRouterInstance.cancelFirmwareDeploy)
 
-	return fRouter
+	})
+
+	return firmwareRouterInstance
 }
 
 // 클라이언트의 펌웨어 배포 요청을 처리하는 엔드포인트입니다.

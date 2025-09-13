@@ -2,7 +2,6 @@ package network
 
 import (
 	"log"
-	"mqtt-handler/mqttclient"
 	"net/http"
 )
 
@@ -13,13 +12,13 @@ type Network struct {
 }
 
 // 새로운 Network 인스턴스를 생성하고 펌웨어 배포 요청을 처리할 라우팅 경로를 등록합니다.
-func NewNetwork(mqttClient *mqttclient.MQTTClient) *Network {
+func NewNetwork() *Network {
 	net := &Network{
 		mux: http.NewServeMux(),
 	}
 
-	newFirmwareRouter(net, mqttClient)
-	newAdsRouter(net, mqttClient)
+	newFirmwareRouter(net)
+	newAdsRouter(net)
 	return net
 }
 
