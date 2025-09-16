@@ -76,6 +76,13 @@ public class AdsController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    /**
+     * 광고 배포 목록을 페이지네이션 방식으로 조회합니다.
+     *
+     * @param page  조회할 페이지 번호 (기본값: 1)
+     * @param limit 한 페이지당 데이터 개수 (기본값: 10)
+     * @return 페이지네이션 정보와 광고 배포 목록을 담은 응답 DTO
+     */
     @GetMapping("/deployment/list")
     public ResponseEntity<AdsDeploymentListDto> findAllDeploymentList(
             @RequestParam(defaultValue = "1") int page,
@@ -87,4 +94,10 @@ public class AdsController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    @GetMapping("/deployment/{id}")
+    public ResponseEntity<DetailAdsDeploymentDto> findDetailDeploymentById(@PathVariable Long id) {
+        DetailAdsDeploymentDto responseDto = deploymentService.findAdsDeploymentById(id);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
 }

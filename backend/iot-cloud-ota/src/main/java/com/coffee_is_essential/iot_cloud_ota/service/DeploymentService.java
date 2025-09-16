@@ -169,6 +169,7 @@ public class DeploymentService {
                 OffsetDateTime.now()
         );
 
+        saveFirmwareDeploymentDevices(devices, firmwareDeployment, DeploymentStatus.IN_PROGRESS);
         List<DeployTargetDeviceInfo> deviceInfos = devices
                 .stream()
                 .map(DeployTargetDeviceInfo::from)
@@ -321,6 +322,22 @@ public class DeploymentService {
                 .toList();
 
         return DetailDeploymentResponseDto.of(deployment, targetInfo, downloadEvents, progressCount, status);
+    }
+
+    public DetailAdsDeploymentDto findAdsDeploymentById(Long id) {
+        FirmwareDeployment deployment = firmwareDeploymentRepository.findByIdOrElseThrow(id);
+        OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(id);
+        List<Target> targetInfo = getTargetList(deployment);
+        ProgressCount progressCount = getProgressCount(id);
+        List<DeviceDeploymentStatus> downloadEvents = downloadEventsJdbcRepository.findLatestPerDeviceByCommandId(deployment.getCommandId()).stream()
+                .map(DeviceDeploymentStatus::from)
+                .toList();
+
+        List<Ads> adsList = adsDeploymentJpaRepository.findByFirmwareDeployment(deployment).stream()
+                .map(Ads::from)
+                .toList();
+
+        return DetailAdsDeploymentDto.of(deployment, targetInfo, downloadEvents, progressCount, status, adsList);
     }
 
     /**
