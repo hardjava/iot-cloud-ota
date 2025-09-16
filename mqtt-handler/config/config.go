@@ -6,11 +6,14 @@ import (
 	"os"
 )
 
+var SpringUrl string
+
 // 환경 변수로부터 읽어들일 설정값의 구조를 정의합니다.
 type Config struct {
 	Server struct {
 		Port string
 	}
+
 	MqttBroker struct {
 		Url      string
 		ClientId string
@@ -18,6 +21,10 @@ type Config struct {
 
 	QuestDB struct {
 		Conf string
+	}
+
+	Spring struct {
+		Url string
 	}
 }
 
@@ -29,6 +36,7 @@ func NewConfig() *Config {
 	conf.MqttBroker.Url = getEnv("MQTT_BROKER_URL", "tcp://localhost:1883")
 	conf.MqttBroker.ClientId = getEnv("MQTT_CLIENT_ID", "mqtt-handler")
 	conf.QuestDB.Conf = getEnv("QUESTDB_CONF", "http::addr=localhost:9000")
+	SpringUrl = getEnv("SPRING_URL", "http://localhost:8080")
 
 	return conf
 }

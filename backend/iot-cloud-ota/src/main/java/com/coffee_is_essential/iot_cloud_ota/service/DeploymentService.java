@@ -128,54 +128,54 @@ public class DeploymentService {
     @Transactional
     public AdsDeploymentDto deployAds(AdsDeploymentRequestDto requestDto) {
         String url = mqttHandlerBaseUrl + "/api/advertisements/deployment";
+        String commandId = "AD-" + UUID.randomUUID().toString();
         List<Long> adIds = requestDto.adIds();
 
         if (requestDto.devices().isEmpty() && requestDto.groups().isEmpty() && requestDto.regions().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
         }
-
         List<AdsMetadata> adsMetadataList = adsMetadataJpaRepository.findAllById(adIds);
         List<Device> devices = deviceJpaRepository.findByFilterDynamic(
                 requestDto.devices(),
                 requestDto.groups(),
                 requestDto.regions()
         );
-
         List<DeploymentContent> contents = new ArrayList<>();
         Date expiresAt = Date.from(Instant.now().plus(Duration.ofMinutes(TIMEOUT)));
         OffsetDateTime expiresAtUtc = expiresAt.toInstant()
                 .atZone(ZoneId.of("UTC"))
                 .toOffsetDateTime();
 
-        AdsDeploymentDto deploymentDto = new AdsDeploymentDto(
-                "AD-" + UUID.randomUUID().toString(),
-                contents,
-                devices.stream().map(DeployTargetDeviceInfo::from).toList(),
-                OffsetDateTime.now()
-        );
-
-        FirmwareDeployment firmwareDeployment = new FirmwareDeployment(deploymentDto.commandId(), requestDto.deploymentType(), OffsetDateTime.now(), expiresAtUtc);
+        FirmwareDeployment firmwareDeployment = new FirmwareDeployment(commandId, requestDto.deploymentType(), OffsetDateTime.now(), expiresAtUtc);
         firmwareDeploymentRepository.save(firmwareDeployment);
         overallDeploymentStatusRepository.save(new OverallDeploymentStatus(firmwareDeployment, OverallStatus.IN_PROGRESS));
 
+        Long totalSize = 0L;
         for (AdsMetadata adsMetadata : adsMetadataList) {
             String signedUrl = cloudFrontSignedUrlService.generateSignedUrl(adsMetadata.getBinaryS3Path(), expiresAt);
             contents.add(new DeploymentContent(
                     new SignedUrlInfo(signedUrl, TIMEOUT),
                     new FileInfo(adsMetadata.getId(), adsMetadata.getFileHash(), adsMetadata.getFileSize())
             ));
+            totalSize += adsMetadata.getFileSize();
             adsDeploymentJpaRepository.save(new AdsDeployment(firmwareDeployment, adsMetadata));
         }
+
+        AdsDeploymentDto deploymentDto = new AdsDeploymentDto(
+                commandId,
+                contents,
+                devices.stream().map(DeployTargetDeviceInfo::from).toList(),
+                totalSize,
+                OffsetDateTime.now()
+        );
 
         List<DeployTargetDeviceInfo> deviceInfos = devices
                 .stream()
                 .map(DeployTargetDeviceInfo::from)
                 .toList();
-
         if (deviceInfos.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
         }
-
         sendMqttHandler(deploymentDto, url);
         deploymentRedisService.addDevices(deploymentDto.commandId(), deviceInfos);
         deployJudgeScheduler.startScheduler(deploymentDto.commandId());
