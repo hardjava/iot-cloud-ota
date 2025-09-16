@@ -90,4 +90,5 @@ func (m *MQTTClient) SubscribeAllTopics() {
 	m.subscribeSystemStatus("v1/+/status/system", parseSystemStatus, "[SYSTEM STATUS]")
 	m.subscribeErrorLog("v1/+/status/error_log", parseErrorLog, "[ERROR LOG]")
 	m.subscribeSalesData("v1/+/sales/data", parseSalesItem, "[SALES DATA]")
+	m.subscribeDeviceRegister("v1/+/regist", "[DEVICE REGISTER]")
 }

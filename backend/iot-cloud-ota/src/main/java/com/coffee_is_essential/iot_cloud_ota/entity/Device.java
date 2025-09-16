@@ -1,6 +1,7 @@
 package com.coffee_is_essential.iot_cloud_ota.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 /**
@@ -10,9 +11,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "device")
 @NoArgsConstructor
+@AllArgsConstructor
 public class Device extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)

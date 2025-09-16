@@ -101,6 +101,7 @@ func (m *MQTTClient) PublishDownloadCancelRequest(req *types.DeployCancelRequest
 	}()
 }
 
+// MQTT 클라이언트를 사용해 지정된 토픽으로 JSON 형태의 광고 배포 요청 메시지를 전송합니다.
 func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 	var buf bytes.Buffer
 
@@ -108,11 +109,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 		CommandID: req.CommandId,
 		Contents:  req.Contents,
 		Timestamp: req.Timestamp,
-	}
-
-	totalSize := 0
-	for _, content := range req.Contents {
-		totalSize += int(content.FileInfo.Size)
+		TotalSize: req.TotalSize,
 	}
 
 	enc := json.NewEncoder(&buf)
@@ -133,7 +130,7 @@ func (m *MQTTClient) PublishAdsDownloadRequest(req *types.AdsDeployRequest) {
 				Message:          "Download Command",
 				Status:           "WAITING",
 				Progress:         0,
-				TotalBytes:       int64(totalSize),
+				TotalBytes:       command.TotalSize,
 				DownloadBytes:    0,
 				SpeedKbps:        0,
 				ChecksumVerified: false,
