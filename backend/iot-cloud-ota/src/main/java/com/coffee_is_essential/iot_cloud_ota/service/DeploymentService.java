@@ -239,6 +239,43 @@ public class DeploymentService {
     }
 
     /**
+     * 광고 배포 이력 목록 조회 (페이지네이션 적용)
+     *
+     * @param paginationInfo 페이지 번호/사이즈 정보
+     * @return 배포 목록 + 페이지네이션 메타데이터
+     */
+    public AdsDeploymentListDto getAdsDeploymentList(PaginationInfo paginationInfo) {
+        Pageable pageable = PageRequest.of(paginationInfo.page() - 1, paginationInfo.limit(), Sort.by("createdAt").descending());
+        Page<FirmwareDeployment> deploymentPage = firmwareDeploymentRepository.findAllByFirmwareMetadataIsNull(pageable);
+        List<FirmwareDeployment> deployments = deploymentPage.getContent();
+        List<AdsDeploymentMetadata> list = new ArrayList<>();
+
+        for (FirmwareDeployment deployment : deployments) {
+            AdsDeploymentMetadata metadata = getAdsDeploymentMetadata(deployment);
+            list.add(metadata);
+        }
+
+        return AdsDeploymentListDto.of(list, deploymentPage.getPageable(), deploymentPage.getTotalPages(), deploymentPage.getTotalElements());
+    }
+
+    /**
+     * 단일 배포 엔티티를 Metadata DTO로 변환
+     * 상태별 카운트 조회
+     * 대상(Target) 정보 조회 (Device, Division, Region 별 분기)
+     *
+     * @param deployment 배포 엔티티
+     * @return AdsDeploymentMetadata DTO
+     */
+    private AdsDeploymentMetadata getAdsDeploymentMetadata(FirmwareDeployment deployment) {
+        Long deploymentId = deployment.getId();
+        ProgressCount progressCount = getProgressCount(deploymentId);
+        List<Target> targetInfo = getTargetList(deployment);
+        OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(deployment.getId());
+
+        return AdsDeploymentMetadata.of(deployment, targetInfo, progressCount, status.getOverallStatus());
+    }
+
+    /**
      * 단일 배포 엔티티를 Metadata DTO로 변환
      * 상태별 카운트 조회
      * 대상(Target) 정보 조회 (Device, Division, Region 별 분기)

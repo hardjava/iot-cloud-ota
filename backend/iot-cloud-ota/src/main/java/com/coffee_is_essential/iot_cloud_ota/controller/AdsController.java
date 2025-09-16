@@ -75,4 +75,16 @@ public class AdsController {
         AdsDeploymentDto responseDto = deploymentService.deployAds(requestDto);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
+
+    @GetMapping("/deployment/list")
+    public ResponseEntity<AdsDeploymentListDto> findAllDeploymentList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        PaginationInfo paginationInfo = PaginationInfo.of(page, limit);
+        AdsDeploymentListDto responseDto = deploymentService.getAdsDeploymentList(paginationInfo);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
 }

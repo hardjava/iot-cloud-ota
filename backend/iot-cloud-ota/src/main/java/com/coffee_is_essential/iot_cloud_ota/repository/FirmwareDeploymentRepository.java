@@ -23,4 +23,6 @@ public interface FirmwareDeploymentRepository extends JpaRepository<FirmwareDepl
     }
 
     Page<FirmwareDeployment> findAllByFirmwareMetadataIsNotNull(Pageable pageable);
+
+    Page<FirmwareDeployment> findAllByFirmwareMetadataIsNull(Pageable pageable);
 }
