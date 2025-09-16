@@ -324,6 +324,14 @@ public class DeploymentService {
         return DetailDeploymentResponseDto.of(deployment, targetInfo, downloadEvents, progressCount, status);
     }
 
+    /**
+     * 광고 배포 ID로 상세 정보를 조회합니다.
+     * 배포 메타데이터, 전체 상태, 대상 목록, 상태 집계,
+     * 디바이스별 최신 다운로드 이벤트를 조합해 DTO를 반환합니다.
+     *
+     * @param id 광고 배포 ID
+     * @return 광고 배포 상세 DTO
+     */
     public DetailAdsDeploymentDto findAdsDeploymentById(Long id) {
         FirmwareDeployment deployment = firmwareDeploymentRepository.findByIdOrElseThrow(id);
         OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(id);

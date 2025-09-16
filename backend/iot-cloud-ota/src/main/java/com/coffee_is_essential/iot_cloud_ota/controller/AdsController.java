@@ -94,6 +94,12 @@ public class AdsController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
+    /**
+     * ID로 광고 배포 상세 정보를 조회합니다.
+     *
+     * @param id 광고 배포 ID
+     * @return 광고 배포 상세 정보를 담은 응답 DTO
+     */
     @GetMapping("/deployment/{id}")
     public ResponseEntity<DetailAdsDeploymentDto> findDetailDeploymentById(@PathVariable Long id) {
         DetailAdsDeploymentDto responseDto = deploymentService.findAdsDeploymentById(id);
