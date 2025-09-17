@@ -1,22 +1,16 @@
 #ifndef COFFEE_DEBUG_TASK_HPP
 #define COFFEE_DEBUG_TASK_HPP
 
-#include <cstddef>
 #include <string>
+
+#include <mqtt_client.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <Arduino.h>
-#include <HTTPClient.h>
-
-#include <cJSON.h>
-
 #include "coffee/config.hpp"
-#include "coffee/event_control.hpp"
 #include "coffee/ipc.hpp"
-#include "coffee/network_task.hpp"
-#include "coffee/ota_task.hpp"
+#include "coffee/mqtt_pub.hpp"
 
 namespace coffee {
     /**
@@ -40,5 +34,7 @@ namespace coffee {
      *                    parameter passed for debugging
      */
     void debug2(void* debug_param);
+
+    extern bool mqtt_connected;
 }
 #endif

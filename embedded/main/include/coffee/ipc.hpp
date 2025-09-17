@@ -2,7 +2,9 @@
 #define COFFEE_IPC_HPP
 
 #include <cstdarg>
+#include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 
 #include <freertos/FreeRTOS.h>
@@ -41,7 +43,7 @@ namespace coffee {
      * 
      *            values corresponding to the format string
      */
-    void queue_printf(QueueHandle_t& queue, std::string tag, bool serial_print, const char* fmt, ...);
+    void queue_printf(QueueHandle_t queue, const std::string& tag, bool serial_print, const char* fmt, ...);
 
     /**
      * @brief 큐를 이용하여 메시지를 수신합니다
@@ -60,7 +62,7 @@ namespace coffee {
      * 
      *         whether the message was successfully received
      */
-    bool queue_poll(QueueHandle_t& queue, char* msg_out);
+    bool queue_poll(QueueHandle_t queue, char* msg_out);
 
     extern QueueHandle_t debugTextArea_q;
 
@@ -69,5 +71,9 @@ namespace coffee {
     extern QueueHandle_t wifiTextArea_q;
 
     extern QueueHandle_t dbg_overlay_q;
+
+    extern QueueHandle_t ota_q;
+
+    extern QueueHandle_t ad_q;
 }
 #endif

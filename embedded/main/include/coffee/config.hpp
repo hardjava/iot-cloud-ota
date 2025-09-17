@@ -24,12 +24,12 @@
  *        firmware version information
  */
 #define COFFEE_FIRMWARE_VER_MAJOR 0
-#define COFFEE_FIRMWARE_VER_MINOR 0
-#define COFFEE_FIRMWARE_VER_PATCH 4
+#define COFFEE_FIRMWARE_VER_MINOR 1
+#define COFFEE_FIRMWARE_VER_PATCH 2
 
 #define COFFEE_FIRMWARE_VER_NUM COFFEE_STR(COFFEE_FIRMWARE_VER_MAJOR) "." COFFEE_STR(COFFEE_FIRMWARE_VER_MINOR) "." COFFEE_STR(COFFEE_FIRMWARE_VER_PATCH)
 
-#define COFFEE_ALPHA_TEST 1
+#define COFFEE_ALPHA_TEST 0
 #define COFFEE_BETA_TEST  0
 #if (COFFEE_ALPHA_TEST && COFFEE_BETA_TEST)
     #error "only one of COFFEE_ALPHA_TEST or COFFEE_BETA_TEST can be 1"
@@ -58,6 +58,13 @@
  *        mutex lock waiting time in milliseconds
  */
 #define COFFEE_MTX_TIMEOUT_MS 100
+
+/**
+ * @def COFFEE_UPDATE_TIMEOUT_MS
+ * 
+ * @brief 업데이트를 위한 파일 다운로드 최대 대기 시간(ms)
+ */
+#define COFFEE_UPDATE_TIMEOUT_MS 180000
 
 
 /*
@@ -96,7 +103,7 @@
  * 
  *        file chunk size
  */
-#define COFFEE_FILE_CHUNK_SIZE 0x19000
+#define COFFEE_FILE_CHUNK_SIZE 0x8000
 
 /**
  * @def COFFEE_NETWORK_TIMEOUT_MS
@@ -105,7 +112,7 @@
  * 
  *        maximum network timeout duration
  */
-#define COFFEE_NETWORK_TIMEOUT_MS 10000
+#define COFFEE_NETWORK_TIMEOUT_MS 30000
 
 
 /*

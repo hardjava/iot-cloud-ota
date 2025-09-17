@@ -9,6 +9,16 @@ namespace coffee {
     cJSON* config_root = nullptr;
 
     /**
+     * @brief 기기의 시리얼 넘버 정보
+     */
+    cJSON* serial_number = nullptr;
+
+    /**
+     * @brief 기기의 ID 정보
+     */
+    cJSON* device_id = nullptr;
+
+    /**
      * @brief Wi-Fi 설정을 포함하는 JSON 객체
      * 
      *        JSON object containing Wi-Fi configuration
@@ -55,11 +65,35 @@ namespace coffee {
             return;
         }
 
+        serial_number = cJSON_GetObjectItem(config_root, "serial_number");
+        if (!serial_number) {
+            Serial.println("[coffee/config][error] unable to find \'serial_number\' object");
+
+            cJSON_Delete(config_root);
+            config_root = nullptr;
+
+            return;
+        }
+
+        device_id = cJSON_GetObjectItem(config_root, "device_id");
+        if (!device_id) {
+            Serial.println("[coffee/config][error] unable to find \'device_id\' object");
+
+            cJSON_Delete(config_root);
+            config_root = nullptr;
+            serial_number = nullptr;
+
+            return;
+        }
+
         wifi_config = cJSON_GetObjectItem(config_root, "wifi");
         if (!wifi_config) {
             Serial.println("[coffee/config][error] unable to find ‘wifi’ object");
 
             cJSON_Delete(config_root);
+            config_root = nullptr;
+            serial_number = nullptr;
+            device_id = nullptr;
 
             return;
         }
@@ -69,6 +103,10 @@ namespace coffee {
             Serial.println("[coffee/config][error] unable to find ‘mqtt’ object");
 
             cJSON_Delete(config_root);
+            config_root = nullptr;
+            serial_number = nullptr;
+            device_id = nullptr;
+            wifi_config = nullptr;
 
             return;
         }
@@ -201,8 +239,6 @@ namespace coffee {
         
         if(!out_config) {
             Serial.println("[coffee/config][error] failed to allocate out_config");
-
-            free(out_config);
 
             return;
         }

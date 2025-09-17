@@ -1,11 +1,14 @@
 idf_component_register(SRCS "src/main.cpp"
+        "src/cert.cpp"
         "src/debug_task.cpp"
         "src/event_control.cpp"
         "src/ipc.cpp"
         "src/json_task.cpp"
+        "src/mqtt_pub.cpp"
         "src/mqtt_task.cpp"
         "src/network_task.cpp"
         "src/ota_task.cpp"
+        "src/rtc.cpp"
         "src/ui_task.cpp"
         "ui/ui_comp_hook.c"
         "ui/ui_configScreen.c"
@@ -29,7 +32,7 @@ idf_component_register(SRCS "src/main.cpp"
         coffee-driver
         esp_event
         esp_netif
-        esp_wifi 
+        esp_wifi
         lvgl
         mqtt
         nvs_flash

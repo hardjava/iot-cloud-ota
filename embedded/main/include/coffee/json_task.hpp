@@ -41,10 +41,6 @@ namespace coffee {
      * @param[out] pw_out 마지막으로 연결된 Wi-Fi 비밀번호
      * 
      *                    the password of the last connected Wi-Fi
-     * 
-     * @return 마지막 Wi-Fi 연결 정보 불러오기 성공 여부
-     * 
-     *         whether loading the last Wi-Fi connection information succeeded
      */
     void get_last_wifi(std::string& ssid_out, std::string& pw_out);
 
@@ -56,10 +52,6 @@ namespace coffee {
      * @param[out] addr_out 마지막으로 연결된 MQTT 서버 주소
      * 
      *                      the MQTT server address of the last connected Wi-Fi
-     * 
-     * @return 마지막 MQTT 서버 연결 정보 불러오기 성공 여부
-     * 
-     *         whether loading the last MQTT server connection information succeeded
      */
     void get_last_server(std::string& addr_out);
 
@@ -75,6 +67,10 @@ namespace coffee {
     void write_config(void);
 
     extern cJSON* config_root;
+
+    extern cJSON* serial_number;
+
+    extern cJSON* device_id;
 
     extern cJSON* wifi_config;
 

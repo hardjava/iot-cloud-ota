@@ -7,14 +7,11 @@
 
 lv_obj_t * ui_firmwareScreen = NULL;
 lv_obj_t * ui_firmwareCurrentLabel = NULL;
-lv_obj_t * ui_firmwareLatestLabel = NULL;
-lv_obj_t * ui_firmwareCheckLabel = NULL;
-lv_obj_t * ui_firmwareCheckButton = NULL;
-lv_obj_t * ui_firmwareCheckNewLabel = NULL;
 lv_obj_t * ui_firmwareDebugButton = NULL;
 lv_obj_t * ui_firmwareDebugImage = NULL;
 lv_obj_t * ui_firmwareBackButton = NULL;
 lv_obj_t * ui_firmwareBackImage = NULL;
+lv_obj_t * ui_systemInfoTextArea = NULL;
 // event funtions
 void ui_event_firmwareScreen(lv_event_t * e)
 {
@@ -22,15 +19,6 @@ void ui_event_firmwareScreen(lv_event_t * e)
 
     if(event_code == LV_EVENT_SCREEN_LOAD_START) {
         firmware_screen_load(e);
-    }
-}
-
-void ui_event_firmwareCheckButton(lv_event_t * e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-
-    if(event_code == LV_EVENT_RELEASED) {
-        firmware_check(e);
     }
 }
 
@@ -65,51 +53,10 @@ void ui_firmwareScreen_screen_init(void)
     lv_obj_set_width(ui_firmwareCurrentLabel, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_firmwareCurrentLabel, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_x(ui_firmwareCurrentLabel, 0);
-    lv_obj_set_y(ui_firmwareCurrentLabel, -99);
+    lv_obj_set_y(ui_firmwareCurrentLabel, -200);
     lv_obj_set_align(ui_firmwareCurrentLabel, LV_ALIGN_CENTER);
     lv_label_set_text(ui_firmwareCurrentLabel, "Current Version Loading...");
     lv_obj_set_style_text_font(ui_firmwareCurrentLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_firmwareLatestLabel = lv_label_create(ui_firmwareScreen);
-    lv_obj_set_width(ui_firmwareLatestLabel, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_firmwareLatestLabel, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_firmwareLatestLabel, 0);
-    lv_obj_set_y(ui_firmwareLatestLabel, -47);
-    lv_obj_set_align(ui_firmwareLatestLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_firmwareLatestLabel, "Latest Version Loading...");
-    lv_obj_set_style_text_font(ui_firmwareLatestLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_firmwareCheckLabel = lv_label_create(ui_firmwareScreen);
-    lv_obj_set_width(ui_firmwareCheckLabel, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_firmwareCheckLabel, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_firmwareCheckLabel, 0);
-    lv_obj_set_y(ui_firmwareCheckLabel, 65);
-    lv_obj_set_align(ui_firmwareCheckLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_firmwareCheckLabel, "No new firmware version found");
-    lv_obj_set_style_text_font(ui_firmwareCheckLabel, &lv_font_montserrat_14, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_firmwareCheckButton = lv_btn_create(ui_firmwareScreen);
-    lv_obj_set_width(ui_firmwareCheckButton, 200);
-    lv_obj_set_height(ui_firmwareCheckButton, 50);
-    lv_obj_set_x(ui_firmwareCheckButton, 0);
-    lv_obj_set_y(ui_firmwareCheckButton, 120);
-    lv_obj_set_align(ui_firmwareCheckButton, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_firmwareCheckButton, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_clear_flag(ui_firmwareCheckButton, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_color(ui_firmwareCheckButton, lv_color_hex(0xE8E8E8), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_firmwareCheckButton, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_color(ui_firmwareCheckButton, lv_color_hex(0x808080), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_opa(ui_firmwareCheckButton, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui_firmwareCheckButton, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_spread(ui_firmwareCheckButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_firmwareCheckNewLabel = lv_label_create(ui_firmwareCheckButton);
-    lv_obj_set_width(ui_firmwareCheckNewLabel, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_firmwareCheckNewLabel, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_align(ui_firmwareCheckNewLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_firmwareCheckNewLabel, "Check for latest version");
-    lv_obj_set_style_text_color(ui_firmwareCheckNewLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui_firmwareCheckNewLabel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_firmwareDebugButton = lv_btn_create(ui_firmwareScreen);
     lv_obj_set_width(ui_firmwareDebugButton, 60);
@@ -155,7 +102,14 @@ void ui_firmwareScreen_screen_init(void)
     lv_obj_add_flag(ui_firmwareBackImage, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_firmwareBackImage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    lv_obj_add_event_cb(ui_firmwareCheckButton, ui_event_firmwareCheckButton, LV_EVENT_ALL, NULL);
+    ui_systemInfoTextArea = lv_textarea_create(ui_firmwareScreen);
+    lv_obj_set_width(ui_systemInfoTextArea, 700);
+    lv_obj_set_height(ui_systemInfoTextArea, 300);
+    lv_obj_set_x(ui_systemInfoTextArea, 0);
+    lv_obj_set_y(ui_systemInfoTextArea, -10);
+    lv_obj_set_align(ui_systemInfoTextArea, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_systemInfoTextArea, LV_OBJ_FLAG_CLICK_FOCUSABLE);      /// Flags
+
     lv_obj_add_event_cb(ui_firmwareDebugButton, ui_event_firmwareDebugButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_firmwareBackButton, ui_event_firmwareBackButton, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_firmwareScreen, ui_event_firmwareScreen, LV_EVENT_ALL, NULL);
@@ -169,13 +123,10 @@ void ui_firmwareScreen_screen_destroy(void)
     // NULL screen variables
     ui_firmwareScreen = NULL;
     ui_firmwareCurrentLabel = NULL;
-    ui_firmwareLatestLabel = NULL;
-    ui_firmwareCheckLabel = NULL;
-    ui_firmwareCheckButton = NULL;
-    ui_firmwareCheckNewLabel = NULL;
     ui_firmwareDebugButton = NULL;
     ui_firmwareDebugImage = NULL;
     ui_firmwareBackButton = NULL;
     ui_firmwareBackImage = NULL;
+    ui_systemInfoTextArea = NULL;
 
 }

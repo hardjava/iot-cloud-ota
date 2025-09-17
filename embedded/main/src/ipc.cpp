@@ -28,6 +28,16 @@ namespace coffee {
 	 *        queue for delivering text to be displayed in the debug overlay
 	 */
 	QueueHandle_t dbg_overlay_q;
+	
+	/**
+     * @brief 펌웨어 파일 다운로드 완료를 나타내기 위한 큐
+     */
+    QueueHandle_t ota_q = nullptr;
+
+	/**
+	 * @brief 광고 파일 다운로드 완료를 나타내기 위한 큐
+	 */
+	QueueHandle_t ad_q = nullptr;
 
 	bool init_ipc_queue(void) {
         if (!debugTextArea_q) {
@@ -46,7 +56,15 @@ namespace coffee {
             dbg_overlay_q = xQueueCreate(COFFEE_QUEUE_SIZE * 10, COFFEE_MAX_STR_BUF);
         }
 
-		if (!debugTextArea_q || !serverTextArea_q || !wifiTextArea_q || !dbg_overlay_q) {
+        if (!ota_q) {
+            ota_q = xQueueCreate(1, sizeof(std::size_t));
+        }
+
+        if (!ad_q) {
+            ad_q = xQueueCreate(COFFEE_QUEUE_SIZE * 2, sizeof(bool));
+        }
+
+		if (!debugTextArea_q || !serverTextArea_q || !wifiTextArea_q || !dbg_overlay_q || !ota_q || !ad_q) {
 			Serial.println("[coffee/ipc][error] queue creation failed");
 
 			return false;
@@ -57,7 +75,7 @@ namespace coffee {
 		return true;
 	}
 
-    void queue_printf(QueueHandle_t& queue, std::string tag, bool serial_print, const char* fmt, ...) {
+    void queue_printf(QueueHandle_t queue, const std::string& tag, bool serial_print, const char* fmt, ...) {
         char line[COFFEE_MAX_STR_BUF] = { 0 };
         va_list ap;
 
@@ -73,6 +91,10 @@ namespace coffee {
 			res = std::string(line);
 		}
 
+		if (res.size() == 0) {
+			return;
+		}
+
 		if (serial_print) {
         	Serial.print(res.c_str());
 		}
@@ -83,10 +105,14 @@ namespace coffee {
 			res[res.length() - 1] = '\0';
 		}
 
-        xQueueSend(queue, res.c_str(), portMAX_DELAY);
+		char msg[COFFEE_MAX_STR_BUF] = { 0 };
+		strncpy(msg, res.c_str(), (res.size() < COFFEE_MAX_STR_BUF) ? res.size(): COFFEE_MAX_STR_BUF - 1);
+		msg[COFFEE_MAX_STR_BUF - 1] = 0;
+
+        xQueueSend(queue, msg, portMAX_DELAY);
     }
 
-	bool queue_poll(QueueHandle_t& queue, char* msg_out) {
+	bool queue_poll(QueueHandle_t queue, char* msg_out) {
         if (!queue) {
             return false;
         }

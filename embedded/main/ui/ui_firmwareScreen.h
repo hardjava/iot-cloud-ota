@@ -16,17 +16,13 @@ extern void ui_firmwareScreen_screen_destroy(void);
 extern void ui_event_firmwareScreen(lv_event_t * e);
 extern lv_obj_t * ui_firmwareScreen;
 extern lv_obj_t * ui_firmwareCurrentLabel;
-extern lv_obj_t * ui_firmwareLatestLabel;
-extern lv_obj_t * ui_firmwareCheckLabel;
-extern void ui_event_firmwareCheckButton(lv_event_t * e);
-extern lv_obj_t * ui_firmwareCheckButton;
-extern lv_obj_t * ui_firmwareCheckNewLabel;
 extern void ui_event_firmwareDebugButton(lv_event_t * e);
 extern lv_obj_t * ui_firmwareDebugButton;
 extern lv_obj_t * ui_firmwareDebugImage;
 extern void ui_event_firmwareBackButton(lv_event_t * e);
 extern lv_obj_t * ui_firmwareBackButton;
 extern lv_obj_t * ui_firmwareBackImage;
+extern lv_obj_t * ui_systemInfoTextArea;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

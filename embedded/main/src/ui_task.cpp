@@ -2,11 +2,9 @@
 
 namespace coffee {
     /**
-     * @brief SD 카드에서 모든 광고 이미지 주소를 불러옵니다
-     * 
-     *        loads all advertisement image addresses from the SD card
+     * @brief 확장자 없는 순수 파일 이름만 가져오는 헬퍼
      */
-    static bool get_ads(void);
+    static std::string get_base_name(const char* fn);
 
     /**
      * @brief UI 업데이트 태스크
@@ -36,20 +34,18 @@ namespace coffee {
      * 
      *        list of advertisement image addresses
      */
-    std::vector<std::string> ads;
+    std::vector<int> ad_ids;
 
     bool init_ui_task(void) {
         Serial.println("[coffee/ui_task][info] initializing UI...");
 
-        if (!get_ads()) {
-            Serial.println("[coffee/ui_task][error] failed to read the list of ad images");
+        ui_init();
+
+        if (xTaskCreatePinnedToCore(ui_task, "ui", 8192, nullptr, tskIDLE_PRIORITY + 2, nullptr, 1) != pdPASS) {
+            Serial.println("[coffee/ui_task][error] failed to create ui task...");
 
             return false;
         }
-
-        ui_init();
-
-        xTaskCreatePinnedToCore(coffee::ui_task, "ui", 8192, nullptr, tskIDLE_PRIORITY + 2, nullptr, 1);
 
         return true;
     }
@@ -97,7 +93,7 @@ namespace coffee {
         }
     }
 
-    static bool get_ads(void) {
+    bool get_ad_ids(void) {
         static const std::string AD_DIR = "/res/contents";
         File dir = SD.open(AD_DIR.c_str());
         if (!dir) {
@@ -106,18 +102,37 @@ namespace coffee {
             return false;
         }
 
-        File ad;
-        while ((ad = dir.openNextFile())) {
-            if (!ad.isDirectory()) {
-                std::string ad_path = std::string("S:") + AD_DIR + "/" + ad.name();
-                ads.push_back(ad_path);
+        if (lock_mtx(ad_mtx, portMAX_DELAY)) {
+            ad_ids.clear();
+
+            File ad;
+            while ((ad = dir.openNextFile())) {
+                if (!ad.isDirectory()) {
+                    std::string ad_id = get_base_name(ad.name());
+                    ad_ids.push_back(std::stoi(ad_id));
+                }
+                ad.close();
             }
-            ad.close();
+
+            dir.close();
+
+            unlock_mtx(ad_mtx);
+
+            return true;
         }
 
-        dir.close();
+        return false;
+    }
 
-        return true;
+    static std::string get_base_name(const char* fn) {
+        std::string name(fn);
+        size_t dot_pos = name.rfind('.');
+
+        if (dot_pos != std::string::npos) {
+            return name.substr(0, dot_pos);
+        } else {
+            return name;
+        }
     }
 
     static void ui_task(void* task_param) {
@@ -130,7 +145,7 @@ namespace coffee {
 
             lv_timer_handler();
 
-            delay(10);
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
 
         vTaskDelete(nullptr);

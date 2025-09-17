@@ -14,6 +14,7 @@
 #include <lvgl.h>
 
 #include "coffee/config.hpp"
+#include "coffee/event_control.hpp"
 #include "coffee/ipc.hpp"
 #include "ui.h"
 
@@ -43,6 +44,11 @@ namespace coffee {
      */
     void toggle_dbg_overlay(void);
 
-    extern std::vector<std::string> ads;
+    /**
+     * @brief SD 카드에서 모든 광고 이미지 ID를 불러옵니다
+     */
+    bool get_ad_ids(void);
+
+    extern std::vector<int> ad_ids;
 }
 #endif

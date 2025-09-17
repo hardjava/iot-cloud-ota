@@ -57,5 +57,9 @@ namespace coffee {
     extern SemaphoreHandle_t network_mtx;
 
     extern SemaphoreHandle_t ota_mtx;
+
+    extern SemaphoreHandle_t ad_mtx;
+
+    extern SemaphoreHandle_t cert_mtx;
 }
 #endif

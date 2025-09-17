@@ -1,9 +1,7 @@
 #include "ui.h"
 
-#include <cstdint>
-#include <cstdlib>
+#include <cstring>
 #include <string>
-#include <vector>
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -11,6 +9,7 @@
 #include "coffee/config.hpp"
 #include "coffee/debug_task.hpp"
 #include "coffee/ipc.hpp"
+#include "coffee/mqtt_pub.hpp"
 #include "coffee/mqtt_task.hpp"
 #include "coffee/network_task.hpp"
 #include "coffee/ui_task.hpp"
@@ -65,10 +64,6 @@ namespace coffee {
 	 */
 	static void server_textArea_timer_cb(lv_timer_t* t);
 
-    // 현재 표시 중인 광고 인덱스
-    // current advertisement index
-	static int ad_cnt = 0;
-
     // 광고 전환을 위한 lvgl 타이머
     // lvgl timer for advertisement switching
 	static lv_timer_t* main_ad_timer = nullptr;
@@ -106,12 +101,25 @@ namespace coffee {
     static lv_timer_t* server_textArea_timer = nullptr;
 
 	static void main_ad_timer_cb(lv_timer_t* t) {
+	    static int ad_cnt = 0;
+        static const std::string AD_DIR = "S:/res/contents/";
+
 		if (!ui_mainImage || !lv_obj_is_valid(ui_mainImage)) {
 			return;
 		}
 
-		ad_cnt = (ad_cnt + 1) % ads.size();
-		lv_img_set_src(ui_mainImage, ads[ad_cnt].c_str());
+        if (!get_ad_ids()) {
+            return;
+        }
+
+        if (ad_ids.size() == 0) {
+            return;
+        }
+
+        std::string ad_path = AD_DIR + std::to_string(ad_ids[ad_cnt]) + ".bin";
+        lv_img_set_src(ui_mainImage, ad_path.c_str());
+        
+        ad_cnt = (ad_cnt + 1) % ad_ids.size();
 	}
 
     static void main_wifi_timer_cb(lv_timer_t* t) {
@@ -144,7 +152,11 @@ namespace coffee {
     }
 
     static void server_textArea_timer_cb(lv_timer_t* t) {
-        char buf[COFFEE_MAX_STR_BUF];
+        if (!ui_serverTextArea || !lv_obj_is_valid(ui_serverTextArea)) {
+			return;
+		}
+
+        char buf[COFFEE_MAX_STR_BUF] = { 0 };
 
         while (queue_poll(serverTextArea_q, buf)) {
             lv_textarea_add_text(ui_serverTextArea, buf);
@@ -176,7 +188,11 @@ namespace coffee {
     }
 
     static void wifi_textArea_timer_cb(lv_timer_t* t) {
-        char buf[COFFEE_MAX_STR_BUF];
+        if (!ui_wifiTextArea || !lv_obj_is_valid(ui_wifiTextArea)) {
+			return;
+		}
+
+        char buf[COFFEE_MAX_STR_BUF] = { 0 };
 
         while (queue_poll(wifiTextArea_q, buf)) {
             lv_textarea_add_text(ui_wifiTextArea, buf);
@@ -184,7 +200,11 @@ namespace coffee {
     }
 
     static void debug_textArea_timer_cb(lv_timer_t* t) {
-        char buf[COFFEE_MAX_STR_BUF];
+        if (!ui_debugTextArea || !lv_obj_is_valid(ui_debugTextArea)) {
+			return;
+		}
+
+        char buf[COFFEE_MAX_STR_BUF] = { 0 };
 
         while (queue_poll(debugTextArea_q, buf)) {
             lv_textarea_add_text(ui_debugTextArea, buf);
@@ -200,7 +220,12 @@ extern "C" {
 		lv_img_set_src(ui_mainConfigImage, "S:/res/icon/main/config.bin");
 		lv_img_set_src(ui_mainStartImage, "S:/res/icon/main/start.bin");
 
-		lv_img_set_src(ui_mainImage, coffee::ads[0].c_str());
+        if (coffee::ad_ids.size() == 0) {
+            lv_img_set_src(ui_mainImage, "S:/res/default/default.bin");
+        } else {
+            std::string first_ad_path = std::string("S:/res/contents/") + std::to_string(coffee::ad_ids[0]) + ".bin";
+		    lv_img_set_src(ui_mainImage, first_ad_path.c_str());
+        }
 
 		if (!coffee::main_ad_timer) {
 			coffee::main_ad_timer = lv_timer_create(coffee::main_ad_timer_cb, COFFEE_AD_TERM, nullptr);
@@ -246,21 +271,21 @@ extern "C" {
     // called when the flavorStrawberryButton on flavorScreen is clicked
 	void flavor_drop_strawberry(lv_event_t * e)
 	{
-		// 추가 예정
+		coffee::pub_sales_data("candy", "strawberry");
 	}
 
     // flavorScreen의 flavorGreenGrapesButton 클릭 시 호출
     // called when the flavorGreenGrapesButton on flavorScreen is clicked
 	void flavor_drop_green_grapes(lv_event_t * e)
 	{
-		// 추가 예정
+		coffee::pub_sales_data("candy", "green_grapes");
 	}
 
     // flavorScreen의 flavorPlumButton 클릭 시 호출
     // called when the flavorPlumButton on flavorScreen is clicked
 	void flavor_drop_plum(lv_event_t * e)
 	{
-		// 추가 예정
+		coffee::pub_sales_data("candy", "plum");
 	}
 
     // configScreen 로딩 시작 시 호출
@@ -329,7 +354,7 @@ extern "C" {
 		const char* ssid = lv_textarea_get_text(ui_wifiSsidTextArea);
 
         int ssid_len = strlen(ssid);
-        if (ssid_len <= 0 || ssid_len >= 32) {
+        if (ssid_len <= 0 || ssid_len > 32) {
             lv_textarea_add_text(ui_wifiTextArea, "Invalid SSID! aborted...\n");
 
             return;
@@ -337,7 +362,7 @@ extern "C" {
 
 		const char* pw = lv_textarea_get_text(ui_wifiPwTextArea);
         int pw_len = strlen(pw);
-        if (pw_len < 8 || pw_len >= 64) {
+        if (pw_len < 8 || pw_len > 64) {
             lv_textarea_add_text(ui_wifiTextArea, "Invalid password! aborted...\n");
 
             return;
@@ -367,8 +392,6 @@ extern "C" {
 		lv_img_set_src(ui_serverBackImage, "S:/res/icon/share/back.bin");
 
         lv_textarea_set_text(ui_serverAddressTextArea, "");
-        lv_textarea_set_text(ui_serverRegionTextArea, "");
-        lv_textarea_set_text(ui_serverStoreTextArea, "");
 
         if (!coffee::server_info_timer) {
             coffee::server_info_timer = lv_timer_create(coffee::server_info_timer_cb, 1000, nullptr);
@@ -400,30 +423,14 @@ extern "C" {
 	void server_set(lv_event_t * e)
 	{
         const char* addr = lv_textarea_get_text(ui_serverAddressTextArea);
-		const char* region = lv_textarea_get_text(ui_serverRegionTextArea);
-        const char* store = lv_textarea_get_text(ui_serverStoreTextArea);
 
-        if (addr[0] == '\0' && region[0] == '\0' && store[0] == '\0') {
+        if (addr[0] == '\0') {
             lv_textarea_add_text(ui_serverTextArea, "Invalid server config\n");
 
             return;
         }
 
-        if (region[0] == '\0') {
-            coffee::set_mqtt_prefix(coffee::mqtt_region, store);
-        } else if (store[0] == '\0') {
-            coffee::set_mqtt_prefix(region, coffee::mqtt_store);
-        } else {
-            coffee::set_mqtt_prefix(region, store);
-        }
-
-        if (addr[0] == '\0') {
-            lv_textarea_add_text(ui_serverTextArea, "MQTT topic updated!\n");
-            coffee::init_mqtt(coffee::mqtt_uri);
-        } else {
-            lv_textarea_add_text(ui_serverTextArea, "Server configurations updated!\n");
-            coffee::init_mqtt(addr);
-        }
+        coffee::init_mqtt(addr);
 	}
 
     // firmwareScreen 로딩 시작 시 호출
@@ -436,13 +443,10 @@ extern "C" {
 		std::string currentLabel = std::string("Current Version ") + std::string(COFFEE_FIRMWARE_VER);
 
 		lv_label_set_text(ui_firmwareCurrentLabel, currentLabel.c_str());
-	}
 
-    // firmwareScreen의 firmwareCheckButton 클릭 시 호출
-    // called when the firmwareCheckButton on firmwareScreen is clicked
-	void firmware_check(lv_event_t * e)
-	{
-		// 추가 예정
+        std::string system_info = "System Info:\n    MCU: ESP32-S3-WROOM-1-N4R8\n    Flash: 4MB\n    SRAM: 512KB\n    PSRAM:8MB\n    Resolution: 800*480\n";
+
+        lv_textarea_set_text(ui_systemInfoTextArea, system_info.c_str());
 	}
 
     // debugScreen 로딩 시작 시 호출
@@ -471,48 +475,22 @@ extern "C" {
     // called when the debugFunction1Button on debugScreen is clicked
 	void debug_function1(lv_event_t * e)
 	{
-		if (WiFi.status() != WL_CONNECTED) {
-            lv_textarea_add_text(ui_debugTextArea, "You are not connected to a network\nPlease connect to Wi-Fi first\n");
+        const char* input = lv_textarea_get_text(ui_debugCmdTextArea);
 
-            return;
-		}
+        std::string* debug_param = new std::string(input);
 
-        const char* input_id = lv_textarea_get_text(ui_debugCmdTextArea);
-        if (input_id[0] == '\0') {
-            lv_textarea_add_text(ui_debugTextArea, "Invalid firmware ID!\n");
-
-            return;
-        }
-
-        std::string* firmware_id = new std::string(input_id);
-        if (!firmware_id) {
-            lv_textarea_add_text(ui_debugTextArea, "Memory allocation failed\n");
-
-            return;
-        }
-
-        coffee::debug1(firmware_id);
+        coffee::debug1(debug_param);
 	}
 
     // debugScreen의 debugFunction2Button 클릭 시 호출
     // called when the debugFunction2Button on debugScreen is clicked
 	void debug_function2(lv_event_t * e)
 	{
-        const char* input_version = lv_textarea_get_text(ui_debugCmdTextArea);
-        if (input_version[0] == '\0') {
-            lv_textarea_add_text(ui_debugTextArea, "Invalid firmware version!\n");
+        const char* input = lv_textarea_get_text(ui_debugCmdTextArea);
 
-            return;
-        }
+        std::string* debug_param = new std::string(input);
 
-        std::string* firmware_version = new std::string(input_version);
-        if (!firmware_version) {
-            lv_textarea_add_text(ui_debugTextArea, "Memory allocation failed\n");
-
-            return;
-        }
-
-        coffee::debug2(firmware_version);
+        coffee::debug2(debug_param);
 	}
 
     // debugScreen의 debugOnOffButton 클릭 시 호출

@@ -6,3 +6,6 @@
 
 # private project data
 /private/
+
+# temporary files
+/temp/

@@ -12,69 +12,41 @@ namespace coffee {
     // tag used for log messages
     static const std::string TAG = "coffee/ota_task";
 
-    Firmware find_firmware_file(std::string version) {
-        Firmware fw;
+    void ota(std::size_t id) {
+        std::size_t* _id = new std::size_t(id);
 
-        std::string target_file_path = std::string("/ota/") + version + ".bin";
+        if (xTaskCreatePinnedToCore(ota_task, "ota", 8192, _id, tskIDLE_PRIORITY + 6, nullptr, 0) != pdPASS) {
+            queue_printf(dbg_overlay_q, TAG, true, "[error] failed to create ota task\n");
 
-        if (!SD.exists(target_file_path.c_str())) {
-            queue_printf(dbg_overlay_q, TAG, true, "[error] the firmware file for the corresponding version cannot be found\n");
-
-            return fw;
-        }
-
-        fw.file = SD.open(target_file_path.c_str(), FILE_READ);
-        if (!fw.file) {
-            queue_printf(dbg_overlay_q, TAG, true, "[error] the target firmware file cannot be opened\n");
-
-            return fw;
-        }
-
-        fw.version = version;
-
-        return fw;
-    }
-
-    void ota(Firmware target_firmware) {
-        if (target_firmware.version == "") {
-            return;
-        }
-        
-        Firmware* task_param = new Firmware(target_firmware);
-
-        if (xTaskCreatePinnedToCore(ota_task, "ota", 8192, task_param, tskIDLE_PRIORITY + 6, nullptr, 0) != pdPASS) {
-            delete task_param;
+            delete _id;
         }
     }
 
     static void ota_task(void* task_param) {
-        static std::size_t easter_egg_cnt = 0;
+        std::size_t* _id = static_cast<std::size_t*>(task_param);
+        std::size_t id(*_id);
+        delete _id;
 
-        Firmware* tp = static_cast<Firmware*>(task_param);
-        Firmware fw = *tp;
-        delete tp;
-
-        easter_egg_cnt++;
-
-        if (!lock_mtx(ota_mtx)) {
-            if (easter_egg_cnt >= 5) {
-                queue_printf(dbg_overlay_q, TAG, true, "[error] STOP DOING THAT, SONG!!!\n");
-            } else {
-                queue_printf(dbg_overlay_q, TAG, true, "[error] another debugging session is already running\n");
-            }
+        std::string file_path = std::string("/ota/") + std::to_string(id) + ".bin";
+        File fw = SD.open(file_path.c_str(), FILE_READ);
+        if (!fw) {
+            queue_printf(dbg_overlay_q, TAG, true, "[error] failed to open file: %s\n", file_path.c_str());
 
             vTaskDelete(nullptr);
+            return;
         }
 
-        easter_egg_cnt = 0;
+        lock_mtx(ota_mtx, portMAX_DELAY);
 
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA started\n");
-        queue_printf(dbg_overlay_q, TAG, true, "[info] firmware version: %s\n", fw.version.c_str());
+        queue_printf(dbg_overlay_q, TAG, true, "[info] firmware id: %zu\n", id);
 
         // 파티션 정보 확인 및 OTA 타겟 파티션 결정
         const esp_partition_t* running_partition = esp_ota_get_running_partition();
         if (!running_partition) {
             queue_printf(dbg_overlay_q, TAG, true, "[error] failed to get running partition information\n");
+
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
@@ -84,6 +56,8 @@ namespace coffee {
         const esp_partition_t* target = esp_ota_get_next_update_partition(nullptr);
         if (!target) {
             queue_printf(dbg_overlay_q, TAG, true, "[error] the target partition cannot be detected\n");
+            
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
@@ -98,13 +72,13 @@ namespace coffee {
 
         queue_printf(dbg_overlay_q, TAG, true, "[info] target partition: @0x%08X size=%uB\n", target->address, target->size);
 
-        std::size_t firmware_size = fw.file.size();
+        std::size_t firmware_size = fw.size();
         queue_printf(dbg_overlay_q, TAG, true, "[info] firmware file size: %zuB\n", firmware_size);
 
         if (firmware_size == 0 || firmware_size > target->size) {
             queue_printf(dbg_overlay_q, TAG, true, "[error] invalid size: firmware_size=%zuB, target->size=%uB\n", firmware_size, target->size);
 
-            fw.file.close();
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
@@ -114,31 +88,31 @@ namespace coffee {
         // 펌웨어 이미지 헤더 검사
         esp_image_header_t hdr{};
 
-        fw.file.seek(0);
+        fw.seek(0);
         
-        std::size_t n = fw.file.read(reinterpret_cast<uint8_t*>(&hdr), sizeof(hdr));
+        std::size_t n = fw.read(reinterpret_cast<uint8_t*>(&hdr), sizeof(hdr));
         if (n != sizeof(hdr) || hdr.magic != ESP_IMAGE_HEADER_MAGIC) {
             queue_printf(dbg_overlay_q, TAG, true, "[error] invalid firmware image\n");
 
-            fw.file.close();
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
             vTaskDelete(nullptr);
         }
 
-        fw.file.seek(0);
+        fw.seek(0);
 
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 5...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 4...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 3...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 2...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 1...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
         coffee_drv::turn_off_lcd();
 
@@ -150,7 +124,7 @@ namespace coffee {
 
             coffee_drv::turn_on_lcd();
 
-            fw.file.close();
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
@@ -165,7 +139,7 @@ namespace coffee {
             
             coffee_drv::turn_on_lcd();
 
-            fw.file.close();
+            fw.close();
 
             unlock_mtx(ota_mtx);
 
@@ -174,7 +148,7 @@ namespace coffee {
 
         std::size_t total_written = 0;
         std::size_t read_size = 0;
-        while (total_written != firmware_size && (read_size = fw.file.read(file_buf, COFFEE_FILE_CHUNK_SIZE)) != 0) {
+        while (total_written != firmware_size && (read_size = fw.read(file_buf, COFFEE_FILE_CHUNK_SIZE)) != 0) {
             err = esp_ota_write(ota_handle, file_buf, read_size);
             if (err != ESP_OK) {
                 queue_printf(dbg_overlay_q, TAG, true, "[error] OTA write failed: %s\n", esp_err_to_name(err));
@@ -185,7 +159,7 @@ namespace coffee {
             
                 coffee_drv::turn_on_lcd();
 
-                fw.file.close();
+                fw.close();
 
                 unlock_mtx(ota_mtx);
 
@@ -198,7 +172,7 @@ namespace coffee {
 
         heap_caps_free(file_buf);
 
-        fw.file.close();
+        fw.close();
 
         err = esp_ota_end(ota_handle);
         if (err != ESP_OK) {
@@ -235,15 +209,15 @@ namespace coffee {
 
         // 재부팅
         queue_printf(dbg_overlay_q, TAG, true, "[info] rebooting in 5...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] rebooting in 4...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] rebooting in 3...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] rebooting in 2...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         queue_printf(dbg_overlay_q, TAG, true, "[info] rebooting in 1...\n");
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
         esp_restart();
 

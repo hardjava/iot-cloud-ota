@@ -185,7 +185,7 @@ void ui_configScreen_screen_init(void)
     lv_obj_set_x(ui_configFirmwareLabel, 0);
     lv_obj_set_y(ui_configFirmwareLabel, 55);
     lv_obj_set_align(ui_configFirmwareLabel, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_configFirmwareLabel, "FIRMWARE");
+    lv_label_set_text(ui_configFirmwareLabel, "SYSTEM");
     lv_obj_set_style_text_color(ui_configFirmwareLabel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_configFirmwareLabel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_configFirmwareLabel, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
