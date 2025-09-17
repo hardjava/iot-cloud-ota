@@ -169,6 +169,7 @@ public class DeploymentService {
                 OffsetDateTime.now()
         );
 
+        saveFirmwareDeploymentDevices(devices, firmwareDeployment, DeploymentStatus.IN_PROGRESS);
         List<DeployTargetDeviceInfo> deviceInfos = devices
                 .stream()
                 .map(DeployTargetDeviceInfo::from)
@@ -239,6 +240,43 @@ public class DeploymentService {
     }
 
     /**
+     * 광고 배포 이력 목록 조회 (페이지네이션 적용)
+     *
+     * @param paginationInfo 페이지 번호/사이즈 정보
+     * @return 배포 목록 + 페이지네이션 메타데이터
+     */
+    public AdsDeploymentListDto getAdsDeploymentList(PaginationInfo paginationInfo) {
+        Pageable pageable = PageRequest.of(paginationInfo.page() - 1, paginationInfo.limit(), Sort.by("createdAt").descending());
+        Page<FirmwareDeployment> deploymentPage = firmwareDeploymentRepository.findAllByFirmwareMetadataIsNull(pageable);
+        List<FirmwareDeployment> deployments = deploymentPage.getContent();
+        List<AdsDeploymentMetadata> list = new ArrayList<>();
+
+        for (FirmwareDeployment deployment : deployments) {
+            AdsDeploymentMetadata metadata = getAdsDeploymentMetadata(deployment);
+            list.add(metadata);
+        }
+
+        return AdsDeploymentListDto.of(list, deploymentPage.getPageable(), deploymentPage.getTotalPages(), deploymentPage.getTotalElements());
+    }
+
+    /**
+     * 단일 배포 엔티티를 Metadata DTO로 변환
+     * 상태별 카운트 조회
+     * 대상(Target) 정보 조회 (Device, Division, Region 별 분기)
+     *
+     * @param deployment 배포 엔티티
+     * @return AdsDeploymentMetadata DTO
+     */
+    private AdsDeploymentMetadata getAdsDeploymentMetadata(FirmwareDeployment deployment) {
+        Long deploymentId = deployment.getId();
+        ProgressCount progressCount = getProgressCount(deploymentId);
+        List<Target> targetInfo = getTargetList(deployment);
+        OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(deployment.getId());
+
+        return AdsDeploymentMetadata.of(deployment, targetInfo, progressCount, status.getOverallStatus());
+    }
+
+    /**
      * 단일 배포 엔티티를 Metadata DTO로 변환
      * 상태별 카운트 조회
      * 대상(Target) 정보 조회 (Device, Division, Region 별 분기)
@@ -284,6 +322,30 @@ public class DeploymentService {
                 .toList();
 
         return DetailDeploymentResponseDto.of(deployment, targetInfo, downloadEvents, progressCount, status);
+    }
+
+    /**
+     * 광고 배포 ID로 상세 정보를 조회합니다.
+     * 배포 메타데이터, 전체 상태, 대상 목록, 상태 집계,
+     * 디바이스별 최신 다운로드 이벤트를 조합해 DTO를 반환합니다.
+     *
+     * @param id 광고 배포 ID
+     * @return 광고 배포 상세 DTO
+     */
+    public DetailAdsDeploymentDto findAdsDeploymentById(Long id) {
+        FirmwareDeployment deployment = firmwareDeploymentRepository.findByIdOrElseThrow(id);
+        OverallDeploymentStatus status = overallDeploymentStatusRepository.findLatestByDeploymentIdOrElseThrow(id);
+        List<Target> targetInfo = getTargetList(deployment);
+        ProgressCount progressCount = getProgressCount(id);
+        List<DeviceDeploymentStatus> downloadEvents = downloadEventsJdbcRepository.findLatestPerDeviceByCommandId(deployment.getCommandId()).stream()
+                .map(DeviceDeploymentStatus::from)
+                .toList();
+
+        List<Ads> adsList = adsDeploymentJpaRepository.findByFirmwareDeployment(deployment).stream()
+                .map(Ads::from)
+                .toList();
+
+        return DetailAdsDeploymentDto.of(deployment, targetInfo, downloadEvents, progressCount, status, adsList);
     }
 
     /**
