@@ -1,11 +1,11 @@
 import { JSX } from "react";
-import { FirmwareDeploymentDeviceStatus } from "../model/types";
+import { DeploymentDeviceStatus } from "./types";
 
 /**
  * 디바이스별 배포 상태에 따른 배지 컴포넌트 Props 인터페이스
  */
 export interface DeploymentDeviceStatusBadgeProps {
-  status: FirmwareDeploymentDeviceStatus["status"];
+  status: DeploymentDeviceStatus;
 }
 
 /**

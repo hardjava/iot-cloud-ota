@@ -1,23 +1,20 @@
 import { useParams } from "react-router";
 import { TitleTile } from "../widgets/layout/ui/TitleTile";
 import { MainTile } from "../widgets/layout/ui/MainTile";
-import { useFirmwareDeploymentDetail } from "../entities/firmware_deployment/api/useFirmwareDeploymentDetail";
+import { useAdvertisementDeploymentDetail } from "../entities/advertisement_deployment/api/useAdvertisementDeploymentDetail";
 import { LabeledValue } from "../shared/ui/LabeledValue";
-import {
-  FirmwareDeploymentDetails,
-  FirmwareDeploymentDeviceStatus,
-} from "../entities/firmware_deployment/model/types";
+import { AdvertisementDeploymentDetail } from "../entities/advertisement_deployment/model/types";
 import { DeploymentStatusBadge } from "../shared/ui/Deployment/DeploymentStatusBadge";
 import { DeploymentProgressBar } from "../shared/ui/Deployment/DeploymentProgressBar";
 import { DeploymentDeviceStatusBadge } from "../shared/ui/Deployment/DeploymentDeviceStatusBadge";
 
 /**
- * 펌웨어 배포 세부 정보 컴포넌트
+ * 광고 배포 세부 정보 컴포넌트
  */
 const DeploymentInfo = ({
   deployment,
 }: {
-  deployment: FirmwareDeploymentDetails;
+  deployment: AdvertisementDeploymentDetail;
 }) => {
   return (
     <div className="flex justify-between">
@@ -28,18 +25,22 @@ const DeploymentInfo = ({
           size="sm"
         />
         <LabeledValue
-          label="펌웨어 버전"
-          value={deployment.firmware.version}
+          label="광고"
+          value={deployment.ads.map((ad) => ad.title).join(", ")}
           size="sm"
         />
         <LabeledValue
           label="시작 일시"
-          value={deployment.deployedAt.toLocaleString()}
+          value={new Date(deployment.deployedAt).toLocaleString()}
           size="sm"
         />
         <LabeledValue
           label="만료 일시"
-          value={deployment.expiresAt?.toLocaleString() ?? "없음"}
+          value={
+            deployment.expiresAt
+              ? new Date(deployment.expiresAt).toLocaleString()
+              : "없음"
+          }
           size="sm"
         />
         <div className="flex items-center gap-2">
@@ -95,7 +96,7 @@ const DeploymentInfo = ({
 const DeviceStatusList = ({
   devices,
 }: {
-  devices: FirmwareDeploymentDeviceStatus[];
+  devices: AdvertisementDeploymentDetail["devices"];
 }) => {
   return (
     <div className="space-y-4">
@@ -115,10 +116,12 @@ const DeviceStatusList = ({
                   <span className="font-medium text-neutral-800">
                     디바이스 ID: {device.id}
                   </span>
-                  <DeploymentDeviceStatusBadge status={device.status} />
+                  <DeploymentDeviceStatusBadge
+                    status={device.status === "FAIL" ? "FAILED" : device.status}
+                  />
                 </div>
                 <span className="text-sm text-neutral-500">
-                  {device.timestamp.toLocaleString()}
+                  {new Date(device.timestamp).toLocaleString()}
                 </span>
               </div>
 
@@ -144,10 +147,10 @@ const DeviceStatusList = ({
 };
 
 /**
- * 펌웨어 배포 세부 정보 페이지 컴포넌트
+ * 광고 배포 세부 정보 페이지 컴포넌트
  * 배포 ID를 URL 파라미터로 받아 해당 배포의 세부 정보를 표시합니다.
  */
-export const FirmwareDeploymentDetailPage = () => {
+export const AdvertisementDeploymentDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const parsedId = id ? parseInt(id) : null;
 
@@ -156,7 +159,7 @@ export const FirmwareDeploymentDetailPage = () => {
   }
 
   const { deployment, isLoading, error } =
-    useFirmwareDeploymentDetail(parsedId);
+    useAdvertisementDeploymentDetail(parsedId);
 
   if (isLoading) {
     return <div className="flex justify-center py-8">로딩 중...</div>;
@@ -178,13 +181,13 @@ export const FirmwareDeploymentDetailPage = () => {
     <div className="flex flex-col">
       <div className="mb-8">
         <TitleTile
-          title="펌웨어 관리"
-          description="펌웨어 업로드 및 원격 업데이트"
+          title="광고 관리"
+          description="광고 업로드 및 원격 업데이트"
         />
       </div>
 
       <div className="mb-6">
-        <MainTile title="펌웨어 배포 세부 정보">
+        <MainTile title="광고 배포 세부 정보">
           <DeploymentInfo deployment={deployment} />
         </MainTile>
       </div>
@@ -197,3 +200,4 @@ export const FirmwareDeploymentDetailPage = () => {
     </div>
   );
 };
+

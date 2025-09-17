@@ -26,6 +26,7 @@ export interface FirmwareDeploymentDeviceStatusResponse {
  */
 export interface FirmwareDeploymentResponse {
   id: number;
+  commandId: string;
   firmware: Firmware;
   deploymentType: "REGION" | "GROUP" | "DEVICE";
   targetInfo: DeploymentTargetInfo[];
@@ -65,6 +66,7 @@ export type FirmwareDeploymentDeviceStatus = {
  */
 export type FirmwareDeployment = {
   id: number;
+  commandId: string;
   firmware: Firmware;
   deploymentType: "REGION" | "GROUP" | "DEVICE";
   targetInfo: DeploymentTargetInfo[];
