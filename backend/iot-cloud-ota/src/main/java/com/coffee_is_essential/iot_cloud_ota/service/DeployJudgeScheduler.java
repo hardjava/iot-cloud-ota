@@ -209,6 +209,6 @@ public class DeployJudgeScheduler {
      */
     private boolean isCompleted(String deploymentStatus) {
         return deploymentStatus.equals(DeploymentStatus.SUCCESS.name()) || deploymentStatus.equals(DeploymentStatus.FAILED.name())
-               || deploymentStatus.equals(DeploymentStatus.CANCELLED.name()) || deploymentStatus.equals(DeploymentStatus.TIMEOUT.name());
+               || deploymentStatus.equals(DeploymentStatus.CANCELLED.name()) || deploymentStatus.equals(DeploymentStatus.TIMEOUT.name()) || deploymentStatus.equals(DeploymentStatus.ERROR.name());
     }
 }
