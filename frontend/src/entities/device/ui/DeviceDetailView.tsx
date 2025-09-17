@@ -115,8 +115,12 @@ export const DeviceDetailView = () => {
                 </dd>
               </div>
             </dl>
-            <div className="border border-gray-200 rounded-md text-center p-4 flex-1">
-              메트릭 차트 자리
+            <div className="rounded-md text-center flex-1">
+              <iframe
+                src={`http://grafana-alb-1148491999.ap-northeast-2.elb.amazonaws.com/d-solo/a8c1ab66-cddf-4c7f-b095-c6dee7e8323d/new-dashboard?orgId=1&timezone=browser&var-query0=&var-device_id=${device.deviceId}&editIndex=0&theme=light&panelId=1&__feature.dashboardSceneSolo=true&from=now-1h&to=now&refresh=10s`}
+                width="100%"
+                height="100%"
+              ></iframe>
             </div>
           </div>
         </div>

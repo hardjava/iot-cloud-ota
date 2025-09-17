@@ -12,8 +12,12 @@ export const SideBar = () => {
   return (
     <div className="flex flex-col h-full bg-slate-900 w-60 fixed left-0 top-0">
       <div className="flex flex-col items-center justify-center mt-8">
-        <div className="flex items-center justify-center w-32 h-32 rounded-full bg-white/50">
-          {/* TODO: Add User Avatar */}
+        <div className="flex items-center justify-center w-32 h-32 rounded-full">
+          <img
+            src="/person.png"
+            alt="Profile"
+            className="w-full h-full rounded-full object-cover"
+          />
         </div>
         {/* TODO: Get Username */}
         <p className="mt-4 text-gray-300 ">Junwoo Park</p>
