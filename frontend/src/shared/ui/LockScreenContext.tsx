@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from "react";
 
 /**
  * LockScreenContext의 타입 정의
@@ -25,19 +25,10 @@ const LockScreenContext = createContext<LockScreenContextType | undefined>(
  * 자식 컴포넌트들에게 LockScreenContext를 제공합니다.
  */
 export const LockScreenProvider = ({ children }: { children: ReactNode }) => {
-  const [isLocked, setIsLocked] = useState(() => {
-    return localStorage.getItem('isLocked') === 'true';
-  });
+  const [isLocked, setIsLocked] = useState(false);
 
-  const lock = () => {
-    localStorage.setItem('isLocked', 'true');
-    setIsLocked(true);
-  };
-
-  const unlock = () => {
-    localStorage.removeItem('isLocked');
-    setIsLocked(false);
-  };
+  const lock = () => setIsLocked(true);
+  const unlock = () => setIsLocked(false);
 
   return (
     <LockScreenContext.Provider value={{ isLocked, lock, unlock }}>
