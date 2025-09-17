@@ -53,6 +53,18 @@ export const useNavigation = () => {
         icon: <Megaphone />,
         name: "광고 관리",
         path: "/ads",
+        children: [
+          {
+            id: "ads-list",
+            name: "광고 목록",
+            path: "/ads/list",
+          },
+          {
+            id: "ads-deployment",
+            name: "배포 관리",
+            path: "/ads/deployment",
+          },
+        ],
       },
       {
         id: "monitoring",

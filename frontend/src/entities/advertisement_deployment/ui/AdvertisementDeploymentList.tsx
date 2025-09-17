@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { FirmwareDeployment } from "../model/types";
+import { AdvertisementDeployment } from "../model/types";
 import { DeploymentStatusBadge } from "../../../shared/ui/Deployment/DeploymentStatusBadge";
 import { DeploymentProgressBar } from "../../../shared/ui/Deployment/DeploymentProgressBar";
 import { JSX } from "react";
@@ -7,10 +7,14 @@ import { JSX } from "react";
 /**
  * 개별 배포 카드 컴포넌트
  */
-const DeploymentCard = ({ deployment }: { deployment: FirmwareDeployment }) => {
+const DeploymentCard = ({
+  deployment,
+}: {
+  deployment: AdvertisementDeployment;
+}) => {
   return (
     <Link
-      to={`/firmware/deployment/${deployment.id}`}
+      to={`/ads/deployment/${deployment.id}`}
       className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
     >
       {/* 헤더: 배포 ID와 상태 */}
@@ -22,7 +26,7 @@ const DeploymentCard = ({ deployment }: { deployment: FirmwareDeployment }) => {
           <DeploymentStatusBadge status={deployment.status} />
         </div>
         <span className="text-sm text-neutral-500">
-          {deployment.deployedAt.toLocaleString()}
+          {new Date(deployment.deployedAt).toLocaleString()}
         </span>
       </div>
 
@@ -67,27 +71,27 @@ const DeploymentCard = ({ deployment }: { deployment: FirmwareDeployment }) => {
 };
 
 /**
- * 펌웨어 배포 목록 컴포넌트 Props 인터페이스
+ * 광고 배포 목록 컴포넌트 Props 인터페이스
  */
-export interface FirmwareDeploymentListProps {
-  deployments: FirmwareDeployment[];
+export interface AdvertisementDeploymentListProps {
+  deployments: AdvertisementDeployment[];
   isLoading: boolean;
   error: string | null;
 }
 
 /**
- * 펌웨어 배포 목록 컴포넌트
+ * 광고 배포 목록 컴포넌트
  * 배포 ID, 타입, 대상, 시작 시간, 진행률, 상태 등의 정보를 카드 형식으로 표시합니다.
- * @param deployments - 펌웨어 배포 목록
+ * @param deployments - 광고 배포 목록
  * @param isLoading - 데이터 로딩 상태
  * @param error - 에러 메시지
- * @returns {JSX.Element} 펌웨어 배포 목록 컴포넌트
+ * @returns {JSX.Element} 광고 배포 목록 컴포넌트
  */
-export const FirmwareDeploymentList = ({
+export const AdvertisementDeploymentList = ({
   deployments,
   isLoading,
   error,
-}: FirmwareDeploymentListProps): JSX.Element => {
+}: AdvertisementDeploymentListProps): JSX.Element => {
   if (isLoading) {
     return <div className="flex justify-center py-8">로딩 중...</div>;
   }

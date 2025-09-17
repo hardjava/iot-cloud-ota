@@ -10,6 +10,8 @@ import { FirmwareDeploymentPage } from "../pages/FirmwareDeploymentPage";
 import { FirmwareDeploymentDetailPage } from "../pages/FirmwareDeploymentDetailPage";
 import { AdDetailPage } from "../pages/AdDetailPage";
 import { DeviceDetailPage } from "../pages/DeviceDetailPage";
+import { AdvertisementDeploymentPage } from "../pages/AdvertisementDeploymentPage";
+import { AdvertisementDeploymentDetailPage } from "../pages/AdvertisementDeploymentDetailPage";
 
 export const Router = createBrowserRouter([
   {
@@ -29,8 +31,17 @@ export const Router = createBrowserRouter([
       },
       { path: "device", element: <DevicePage /> },
       { path: "device/:deviceId", element: <DeviceDetailPage /> },
-      { path: "ads", element: <AdListPage /> },
+      { path: "ads", element: <Navigate to="/ads/list" replace /> },
+      { path: "ads/list", element: <AdListPage /> },
       { path: "ads/:id", element: <AdDetailPage /> },
+      {
+        path: "ads/deployment",
+        element: <AdvertisementDeploymentPage />,
+      },
+      {
+        path: "ads/deployment/:id",
+        element: <AdvertisementDeploymentDetailPage />,
+      },
       { path: "monitoring", element: <MonitoringPage /> },
     ],
   },
