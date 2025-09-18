@@ -1,5 +1,6 @@
+# NOTE: 시뮬레이터를 실행할 EC2 인스턴스를 생성합니다. 비용 절감을 위해 count를 0으로 설정해두었습니다.
 resource "aws_instance" "test_instance" {
-  count = 4
+  count = 0
 
   ami                         = "ami-08fbd9515ac39abc3"
   instance_type               = "t4g.xlarge"

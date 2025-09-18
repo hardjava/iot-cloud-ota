@@ -27,7 +27,7 @@ resource "aws_ebs_volume" "questdb_volume" {
 
 resource "aws_instance" "questdb" {
   ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.medium"
+  instance_type               = "t3.small"
   subnet_id                   = aws_subnet.private_a.id
   vpc_security_group_ids      = [aws_security_group.questdb.id]
   associate_public_ip_address = false
@@ -60,7 +60,7 @@ resource "aws_instance" "questdb" {
     docker run -d --name questdb \
       -p 9000:9000 -p 9009:9009 -p 8812:8812 -p 9003:9003 \
       -v /data:/var/lib/questdb \
-      questdb/questdb:latest
+      questdb/questdb:9.0.0
   EOF
 
   tags = {
