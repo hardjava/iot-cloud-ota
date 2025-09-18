@@ -1,0 +1,202 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "questdb-questdb-datasource",
+        "uid": "P2596F1C8E12435D2"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.1",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [
+              "cpu_core_0",
+              "cpu_core_1",
+              "memory_usage",
+              "storage_usage"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "device_id",
+                "operator": "=",
+                "type": "LONG",
+                "value": 0
+              }
+            ],
+            "groupBy": [],
+            "limit": "",
+            "mode": "list",
+            "orderBy": [],
+            "partitionBy": [],
+            "table": "system_status",
+            "timeField": "timestamp"
+          },
+          "datasource": {
+            "type": "questdb-questdb-datasource",
+            "uid": "P2596F1C8E12435D2"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [
+                "cpu_core_0",
+                "cpu_core_1",
+                "memory_usage",
+                "storage_usage"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "device_id",
+                  "operator": "=",
+                  "type": "LONG",
+                  "value": 0
+                }
+              ],
+              "groupBy": [],
+              "limit": "",
+              "mode": "list",
+              "orderBy": [],
+              "partitionBy": [],
+              "table": "system_status",
+              "timeField": "timestamp"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\n  \"cpu_core_0\",\n  \"cpu_core_1\",\n  memory_usage,\n  storage_usage,\n  timestamp\nFROM\n  \"system_status\"\nWHERE device_id = ${device_id}",
+          "refId": "A",
+          "selectedFormat": 2
+        }
+      ],
+      "title": "",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "108",
+          "value": "108"
+        },
+        "description": "",
+        "label": "Device ID",
+        "name": "device_id",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Device Status",
+  "uid": "65638625-be02-42ce-997c-91383f836c8c",
+  "version": 3
+}
