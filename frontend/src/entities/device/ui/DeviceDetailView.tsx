@@ -117,7 +117,7 @@ export const DeviceDetailView = () => {
             </dl>
             <div className="rounded-md text-center flex-1">
               <iframe
-                src={`http://grafana-alb-1148491999.ap-northeast-2.elb.amazonaws.com/d-solo/a8c1ab66-cddf-4c7f-b095-c6dee7e8323d/new-dashboard?orgId=1&timezone=browser&var-query0=&var-device_id=${device.deviceId}&editIndex=0&theme=light&panelId=1&__feature.dashboardSceneSolo=true&from=now-1h&to=now&refresh=10s`}
+                src={`http://grafana-alb-1148491999.ap-northeast-2.elb.amazonaws.com/d-solo/65638625-be02-42ce-997c-91383f836c8c/new-dashboard?orgId=1&timezone=browser&var-device_id=${device.deviceId}&theme=light&panelId=1&__feature.dashboardSceneSolo=true&from=now-1h&to=now`}
                 width="100%"
                 height="100%"
               ></iframe>
