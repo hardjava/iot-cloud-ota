@@ -1,6 +1,3 @@
-import { Device } from "../../device/model/types";
-import { Group } from "../../group/model/types";
-import { Region } from "../../region/model/types";
 import { PaginationMeta } from "../../../shared/api/types";
 
 /**
@@ -14,7 +11,10 @@ export type DeploymentTarget = "DEVICE" | "GROUP" | "REGION";
 export interface AdvertisementDeployment {
   id: number;
   deploymentType: DeploymentTarget;
-  targetInfo: Device[] | Group[] | Region[];
+  targetInfo: {
+    id: number;
+    name: string;
+  }[];
   totalCount: number;
   successCount: number;
   inProgressCount: number;
