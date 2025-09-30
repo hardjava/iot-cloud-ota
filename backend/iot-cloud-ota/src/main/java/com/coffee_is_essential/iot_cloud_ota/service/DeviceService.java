@@ -3,6 +3,7 @@ package com.coffee_is_essential.iot_cloud_ota.service;
 import com.coffee_is_essential.iot_cloud_ota.domain.PaginationInfo;
 import com.coffee_is_essential.iot_cloud_ota.dto.*;
 import com.coffee_is_essential.iot_cloud_ota.entity.*;
+import com.coffee_is_essential.iot_cloud_ota.enums.DeploymentStatus;
 import com.coffee_is_essential.iot_cloud_ota.repository.*;
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
@@ -91,6 +92,10 @@ public class DeviceService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (FirmwareDownloadEvents event : completedEvents) {
+            if (!event.getStatus().equals(DeploymentStatus.SUCCESS.name())) {
+                continue;
+            }
+
             Long deviceId = event.getDeviceId();
 
             em.createQuery("""
@@ -130,6 +135,10 @@ public class DeviceService {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (FirmwareDownloadEvents event : completedEvents) {
+            if (!event.getStatus().equals(DeploymentStatus.SUCCESS.name())) {
+                continue;
+            }
+
             Long deviceId = event.getDeviceId();
 
             em.createQuery("""
