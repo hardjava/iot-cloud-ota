@@ -6,10 +6,9 @@ import { firmwareDeploymentApiService } from "./api";
  * 펌웨어 배포 검색 및 페이지네이션을 처리하는 커스텀 훅
  * useQuery를 사용하여 펌웨어 배포 목록을 가져오고, 검색어와 페이지 변경을 관리합니다.
  */
-export const useFirmwareDeploymentSearch = () => {
+export const useFirmwareDeploymentSearch = (limit: number = 10) => {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
-  const limit = 10;
 
   const { data, isLoading, error, isPlaceholderData } = useQuery({
     queryKey: ["firmware-deployments", query, page, limit],

@@ -4,6 +4,6 @@
 export interface Group {
   groupId: number;
   groupCode: string;
-  groupName: number;
+  groupName: string;
   count: number;
 }
