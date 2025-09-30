@@ -10,6 +10,7 @@ import { GroupList, useGroupWithLocations } from "../widgets/GroupList";
 import { MetricCard } from "../widgets/MetricCard";
 import { DeploymentChart } from "../widgets/DeploymentChart";
 import { deviceApiService } from "../entities/device/api/api";
+import { RegionList, useRegionWithLocations } from "../widgets/RegionList";
 
 export const DashboardPage = () => {
   const { data: devices } = useQuery({
@@ -28,6 +29,7 @@ export const DashboardPage = () => {
   const { firmwareDeployments } = useFirmwareDeploymentSearch(1000);
   const { advertisementDeployments } = useAdvertisementDeploymentSearch(1000);
   const { groupsWithLocations } = useGroupWithLocations();
+  const { regionsWithLocations } = useRegionWithLocations();
 
   const totalDevices = devices?.length ?? 0;
   const totalRegions = regions?.length ?? 0;
@@ -42,12 +44,45 @@ export const DashboardPage = () => {
   const totalCompletedDeployments =
     completedFirmwareDeployments + completedAdDeployments;
 
-  const locations = groupsWithLocations?.map((group, _) => ({
-    device: group.groupName,
-    latitude: group.latitude,
-    longitude: group.longitude,
-    // color: `hsl(${index * 40}, 70%, 50%)`,
-  }));
+  const devicesByGroup = devices
+    ? devices.reduce(
+        (acc, device) => {
+          const groupName = device.groupName || "Unknown Group";
+          acc[groupName] = (acc[groupName] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      )
+    : {};
+
+  const devicesByRegion = devices
+    ? devices.reduce(
+        (acc, device) => {
+          const regionName = device.regionName || "Unknown Region";
+          acc[regionName] = (acc[regionName] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      )
+    : {};
+
+  const groupLocations =
+    groupsWithLocations?.map((group) => ({
+      name: group.groupName,
+      latitude: group.latitude,
+      longitude: group.longitude,
+      value: devicesByGroup[group.groupName] || 0,
+    })) ?? [];
+
+  const regionLocations =
+    regionsWithLocations?.map((region) => ({
+      name: region.regionName,
+      latitude: region.latitude,
+      longitude: region.longitude,
+      value: devicesByRegion[region.regionName] || 0,
+    })) ?? [];
+
+  const locations = [...groupLocations, ...regionLocations];
 
   return (
     <div className="flex flex-col gap-8">
@@ -72,7 +107,10 @@ export const DashboardPage = () => {
                 />
               </div>
             )}
-            <GroupList />
+            <div className="flex flex-col gap-4 ">
+              <GroupList />
+              <RegionList />
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -84,4 +122,3 @@ export const DashboardPage = () => {
     </div>
   );
 };
-

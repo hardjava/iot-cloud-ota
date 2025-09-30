@@ -13,9 +13,10 @@ interface DistributionGlobeProps {
 }
 
 interface Point {
-  device: string;
+  name: string;
   latitude: number;
   longitude: number;
+  value: number;
 }
 
 interface PointData {
@@ -60,45 +61,45 @@ const DistributionGlobe: React.FC<DistributionGlobeProps> = ({
   };
 
   useEffect(() => {
-    const validdeviceLocations = locations.filter(
+    const validLocations = locations.filter(
       (rl) => rl.latitude != null && rl.longitude != null,
     );
 
     const clustered: PointData[] = [];
-    const processeddevice = new Set<string>();
+    const processed = new Set<string>();
 
-    validdeviceLocations.forEach((deviceLocation) => {
-      if (processeddevice.has(deviceLocation.device)) return;
+    validLocations.forEach((location) => {
+      if (processed.has(location.name)) return;
 
-      // Get nearby devices from current device.
-      const nearbydevices = validdeviceLocations.filter(
+      const nearby = validLocations.filter(
         (rl) =>
-          !processeddevice.has(rl.device) &&
+          !processed.has(rl.name) &&
           calculateDistance(
             rl.latitude,
             rl.longitude,
-            deviceLocation.latitude,
-            deviceLocation.longitude,
+            location.latitude,
+            location.longitude,
           ) <= clusterRadius,
       );
 
-      if (nearbydevices.length > 0) {
+      if (nearby.length > 0) {
+        const totalValue = nearby.reduce((sum, nr) => sum + nr.value, 0);
         const cenLat =
-          nearbydevices.reduce((sum, nr) => sum + nr.latitude, 0) /
-          nearbydevices.length;
+          nearby.reduce((sum, nr) => sum + nr.latitude * nr.value, 0) /
+          totalValue;
         const cenLng =
-          nearbydevices.reduce((sum, nr) => sum + nr.longitude, 0) /
-          nearbydevices.length;
+          nearby.reduce((sum, nr) => sum + nr.longitude * nr.value, 0) /
+          totalValue;
 
-        nearbydevices.forEach((nr) => processeddevice.add(nr.device));
+        nearby.forEach((nr) => processed.add(nr.name));
 
         clustered.push({
           lat: cenLat,
           lng: cenLng,
           size: 0.2,
-          color: weightColor(nearbydevices.length),
-          label: `${cenLat} ${cenLng}\n${nearbydevices.length}`,
-          altitude: 0.03 + Math.min(nearbydevices.length * 0.005, 0.6),
+          color: weightColor(totalValue),
+          label: `${cenLat.toFixed(2)}, ${cenLng.toFixed(2)}\n${totalValue}`,
+          altitude: 0.03 + Math.min(totalValue * 0.005, 0.6),
         });
       }
     });

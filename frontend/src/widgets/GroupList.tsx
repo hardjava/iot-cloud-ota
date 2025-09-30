@@ -35,7 +35,7 @@ export const GroupList = () => {
   if (isLoading) return <div>Loading groups...</div>;
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
+    <div className="p-6 bg-white rounded-lg shadow-md overflow-y-auto">
       <h3 className="mb-4 text-lg font-semibold text-gray-800">그룹 목록</h3>
       <ul className="space-y-3">
         {groupsWithLocations?.map((group, index) => (
