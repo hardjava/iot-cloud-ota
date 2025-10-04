@@ -157,6 +157,8 @@ namespace coffee {
 
                     continue;
                 }
+                
+                lock_mtx(ad_mtx, portMAX_DELAY);
 
                 lock_mtx(network_mtx, portMAX_DELAY);
 
@@ -390,6 +392,8 @@ namespace coffee {
                 client.stop();
 
                 unlock_mtx(network_mtx);
+
+                unlock_mtx(ad_mtx);
 
                 continue;
             }

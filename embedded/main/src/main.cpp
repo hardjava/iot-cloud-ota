@@ -48,6 +48,8 @@ extern "C" void app_main(void) {
     coffee::init_dbg_overlay();
 
     delay(1000);
+    
+    Serial2.begin(115200, SERIAL_8N1, -1, 38);
 
     if (coffee::wifi_config) {
         Serial.println("[coffee/main][info] attempting to restore previous network connection...");

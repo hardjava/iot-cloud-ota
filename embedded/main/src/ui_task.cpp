@@ -102,7 +102,7 @@ namespace coffee {
             return false;
         }
 
-        if (lock_mtx(ad_mtx, portMAX_DELAY)) {
+        if (lock_mtx(ad_mtx)) {
             ad_ids.clear();
 
             File ad;

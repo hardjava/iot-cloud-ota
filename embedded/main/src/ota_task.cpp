@@ -23,6 +23,8 @@ namespace coffee {
     }
 
     static void ota_task(void* task_param) {
+        delay(1000);
+        
         std::size_t* _id = static_cast<std::size_t*>(task_param);
         std::size_t id(*_id);
         delete _id;
@@ -37,6 +39,7 @@ namespace coffee {
         }
 
         lock_mtx(ota_mtx, portMAX_DELAY);
+        lock_mtx(ad_mtx, portMAX_DELAY);
 
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA started\n");
         queue_printf(dbg_overlay_q, TAG, true, "[info] firmware id: %zu\n", id);
@@ -86,22 +89,22 @@ namespace coffee {
         }
 
         // 펌웨어 이미지 헤더 검사
-        esp_image_header_t hdr{};
+        // esp_image_header_t hdr{};
 
-        fw.seek(0);
+        // fw.seek(0);
         
-        std::size_t n = fw.read(reinterpret_cast<uint8_t*>(&hdr), sizeof(hdr));
-        if (n != sizeof(hdr) || hdr.magic != ESP_IMAGE_HEADER_MAGIC) {
-            queue_printf(dbg_overlay_q, TAG, true, "[error] invalid firmware image\n");
+        // std::size_t n = fw.read(reinterpret_cast<uint8_t*>(&hdr), sizeof(hdr));
+        // if (n != sizeof(hdr) || hdr.magic != ESP_IMAGE_HEADER_MAGIC) {
+        //     queue_printf(dbg_overlay_q, TAG, true, "[error] invalid firmware image\n");
 
-            fw.close();
+        //     fw.close();
 
-            unlock_mtx(ota_mtx);
+        //     unlock_mtx(ota_mtx);
 
-            vTaskDelete(nullptr);
-        }
+        //     vTaskDelete(nullptr);
+        // }
 
-        fw.seek(0);
+        // fw.seek(0);
 
         queue_printf(dbg_overlay_q, TAG, true, "[info] OTA will begin in 5...\n");
         vTaskDelay(pdMS_TO_TICKS(1000));

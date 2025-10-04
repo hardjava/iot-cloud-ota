@@ -271,6 +271,7 @@ extern "C" {
     // called when the flavorStrawberryButton on flavorScreen is clicked
 	void flavor_drop_strawberry(lv_event_t * e)
 	{
+        Serial2.println("1");
 		coffee::pub_sales_data("candy", "strawberry");
 	}
 
@@ -278,6 +279,7 @@ extern "C" {
     // called when the flavorGreenGrapesButton on flavorScreen is clicked
 	void flavor_drop_green_grapes(lv_event_t * e)
 	{
+        Serial2.println("2");
 		coffee::pub_sales_data("candy", "green_grapes");
 	}
 
@@ -285,6 +287,7 @@ extern "C" {
     // called when the flavorPlumButton on flavorScreen is clicked
 	void flavor_drop_plum(lv_event_t * e)
 	{
+        Serial2.println("3");
 		coffee::pub_sales_data("candy", "plum");
 	}
 
